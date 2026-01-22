@@ -1,0 +1,18 @@
+; Distortion with soft clipping
+; Uses ABSA for waveshaping
+
+equ input  ADCL
+equ output DACL
+
+; Read input
+ldax input
+
+; Apply gain from pot
+mulx POT0
+
+; Soft clip using ABSA
+absa
+mulx POT1
+
+; Output
+wrax output,0

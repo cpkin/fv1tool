@@ -1,0 +1,22 @@
+; Octave Up
+; Frequency doubler using rectification
+
+equ input ADCL
+equ output DACL
+
+; Read input
+ldax input
+wrax REG0, 1
+
+; Full wave rectification
+absa
+wrax REG1, 1
+
+; High pass filter to remove DC
+rdfx REG2, 0.9
+wrax REG2, 0
+
+; Mix with dry signal
+rdax REG0, 0.5
+mulx POT0         ; Blend control
+wrax output, 0

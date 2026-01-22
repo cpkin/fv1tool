@@ -1,0 +1,40 @@
+; Harmonizer
+; Dual pitch shifter for harmony effect
+
+equ input ADCL
+equ output DACL
+
+mem delay1 4096
+mem delay2 4096
+
+; Setup pitch shift LFOs
+skp run, start
+wlds SIN0, 0, 150   ; Up a fifth
+wlds SIN1, 0, 75    ; Up an octave
+
+start:
+; Read input
+ldax input
+wrax REG0, 1
+
+; Pitch shift 1
+wra delay1, 0
+cho rda, SIN0, REG|COMPC, delay1
+cho rda, SIN0, 0, delay1+512
+mulx POT0          ; Harmony 1 level
+wrax REG1, 0
+
+; Pitch shift 2
+ldax REG0
+wra delay2, 0
+cho rda, SIN1, REG|COMPC, delay2
+cho rda, SIN1, 0, delay2+512
+mulx POT1          ; Harmony 2 level
+wrax REG2, 0
+
+; Mix all voices
+ldax REG0
+sof 0.4,0
+rdax REG1, 0.3
+rdax REG2, 0.3
+wrax output, 0

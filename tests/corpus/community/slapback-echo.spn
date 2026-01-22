@@ -1,0 +1,20 @@
+; Slapback Echo
+; Single short delay for rockabilly sound
+
+equ input ADCL
+equ output DACL
+
+mem slapback 2000
+
+; Read input
+ldax input
+wrax REG0, 1
+
+; Slapback delay
+wra slapback, 0
+rda slapback#, 0.7
+mulx POT0          ; Delay level
+
+; Mix with dry
+rdax REG0, 1
+wrax output, 0

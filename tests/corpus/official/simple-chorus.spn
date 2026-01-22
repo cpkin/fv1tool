@@ -1,0 +1,24 @@
+; Simple Chorus Effect
+; Modulated delay line for chorus effect
+
+equ input  ADCL
+equ output DACL
+
+mem delay  4096
+
+; LFO setup
+skp RUN,main
+wlds SIN0,12,65  ; Set LFO frequency
+
+main:
+; Read input
+ldax input
+
+; Write to delay
+wra  delay,0
+
+; Read with LFO modulation
+rmpa 0.5
+
+; Mix and output
+wrax output,0

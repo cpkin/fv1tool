@@ -1,0 +1,27 @@
+; Multi-Tap Delay
+; Multiple delay taps from single delay line
+
+equ input  ADCL
+equ output DACL
+
+mem delay  16384
+
+; Read input
+ldax input
+wrax REG0,1
+
+; Write to delay line
+wra  delay,0
+
+; First tap
+rda  delay#,0.4
+
+; Second tap
+rda  delay+4096,0.3
+
+; Third tap
+rda  delay+8192,0.2
+
+; Mix with dry and output
+rdax REG0,0.5
+wrax output,0

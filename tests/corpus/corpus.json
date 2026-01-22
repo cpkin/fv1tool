@@ -1,0 +1,430 @@
+[
+  {
+    "id": "auto-pan",
+    "source": "official",
+    "spnPath": "tests/corpus/official/auto-pan.spn",
+    "expect": {
+      "instructions": 9,
+      "ramSamples": 0,
+      "registers": [
+        "ADCL",
+        "DACL",
+        "DACR",
+        "SIN0"
+      ]
+    }
+  },
+  {
+    "id": "basic-delay",
+    "source": "official",
+    "spnPath": "tests/corpus/official/basic-delay.spn",
+    "expect": {
+      "instructions": 4,
+      "ramSamples": 16384,
+      "registers": [
+        "ADCL",
+        "DACL"
+      ]
+    }
+  },
+  {
+    "id": "distortion",
+    "source": "official",
+    "spnPath": "tests/corpus/official/distortion.spn",
+    "expect": {
+      "instructions": 5,
+      "ramSamples": 0,
+      "registers": [
+        "ADCL",
+        "DACL",
+        "POT0",
+        "POT1"
+      ]
+    }
+  },
+  {
+    "id": "eq-simple",
+    "source": "official",
+    "spnPath": "tests/corpus/official/eq-simple.spn",
+    "expect": {
+      "instructions": 6,
+      "ramSamples": 0,
+      "registers": [
+        "ADCL",
+        "DACL",
+        "REG0",
+        "REG1"
+      ]
+    }
+  },
+  {
+    "id": "flanger",
+    "source": "official",
+    "spnPath": "tests/corpus/official/flanger.spn",
+    "expect": {
+      "instructions": 8,
+      "ramSamples": 1024,
+      "registers": [
+        "ADCL",
+        "DACL",
+        "REG0",
+        "SIN0"
+      ]
+    }
+  },
+  {
+    "id": "multitap-delay",
+    "source": "official",
+    "spnPath": "tests/corpus/official/multitap-delay.spn",
+    "expect": {
+      "instructions": 8,
+      "ramSamples": 16384,
+      "registers": [
+        "ADCL",
+        "DACL",
+        "REG0"
+      ]
+    }
+  },
+  {
+    "id": "pitch-shift",
+    "source": "official",
+    "spnPath": "tests/corpus/official/pitch-shift.spn",
+    "expect": {
+      "instructions": 16,
+      "ramSamples": 16384,
+      "registers": [
+        "ADCL",
+        "DACL",
+        "REG0",
+        "REG1",
+        "SIN0",
+        "SIN1"
+      ]
+    }
+  },
+  {
+    "id": "ring-mod",
+    "source": "official",
+    "spnPath": "tests/corpus/official/ring-mod.spn",
+    "expect": {
+      "instructions": 5,
+      "ramSamples": 0,
+      "registers": [
+        "ADCL",
+        "DACL",
+        "SIN0"
+      ]
+    }
+  },
+  {
+    "id": "simple-chorus",
+    "source": "official",
+    "spnPath": "tests/corpus/official/simple-chorus.spn",
+    "expect": {
+      "instructions": 6,
+      "ramSamples": 4096,
+      "registers": [
+        "ADCL",
+        "DACL",
+        "SIN0"
+      ]
+    }
+  },
+  {
+    "id": "stereo-reverb",
+    "source": "official",
+    "spnPath": "tests/corpus/official/stereo-reverb.spn",
+    "expect": {
+      "instructions": 12,
+      "ramSamples": 18500,
+      "registers": [
+        "ADCL",
+        "DACL",
+        "DACR"
+      ]
+    }
+  },
+  {
+    "id": "tremolo",
+    "source": "official",
+    "spnPath": "tests/corpus/official/tremolo.spn",
+    "expect": {
+      "instructions": 6,
+      "ramSamples": 0,
+      "registers": [
+        "ADCL",
+        "DACL",
+        "POT0",
+        "SIN0"
+      ]
+    }
+  },
+  {
+    "id": "bitcrusher",
+    "source": "community",
+    "spnPath": "tests/corpus/community/bitcrusher.spn",
+    "expect": {
+      "instructions": 6,
+      "ramSamples": 0,
+      "registers": [
+        "ADCL",
+        "DACL",
+        "POT0"
+      ]
+    }
+  },
+  {
+    "id": "compressor",
+    "source": "community",
+    "spnPath": "tests/corpus/community/compressor.spn",
+    "expect": {
+      "instructions": 11,
+      "ramSamples": 0,
+      "registers": [
+        "ADCL",
+        "DACL",
+        "POT0",
+        "REG0",
+        "REG1",
+        "REG2"
+      ]
+    }
+  },
+  {
+    "id": "dual-delay",
+    "source": "community",
+    "spnPath": "tests/corpus/community/dual-delay.spn",
+    "expect": {
+      "instructions": 12,
+      "ramSamples": 20000,
+      "registers": [
+        "ADCL",
+        "ADCR",
+        "DACL",
+        "DACR",
+        "REG0",
+        "REG1"
+      ]
+    }
+  },
+  {
+    "id": "gate-reverb",
+    "source": "community",
+    "spnPath": "tests/corpus/community/gate-reverb.spn",
+    "expect": {
+      "instructions": 16,
+      "ramSamples": 16500,
+      "registers": [
+        "ADCL",
+        "DACL",
+        "POT1",
+        "REG0",
+        "REG7"
+      ]
+    }
+  },
+  {
+    "id": "harmonizer",
+    "source": "community",
+    "spnPath": "tests/corpus/community/harmonizer.spn",
+    "expect": {
+      "instructions": 21,
+      "ramSamples": 8192,
+      "registers": [
+        "ADCL",
+        "DACL",
+        "POT0",
+        "POT1",
+        "REG0",
+        "REG1",
+        "REG2",
+        "SIN0",
+        "SIN1"
+      ]
+    }
+  },
+  {
+    "id": "leslie-sim",
+    "source": "community",
+    "spnPath": "tests/corpus/community/leslie-sim.spn",
+    "expect": {
+      "instructions": 16,
+      "ramSamples": 2048,
+      "registers": [
+        "ADCL",
+        "DACL",
+        "DACR",
+        "REG0",
+        "SIN0",
+        "SIN1"
+      ]
+    }
+  },
+  {
+    "id": "lo-fi",
+    "source": "community",
+    "spnPath": "tests/corpus/community/lo-fi.spn",
+    "expect": {
+      "instructions": 12,
+      "ramSamples": 1,
+      "registers": [
+        "ADCL",
+        "DACL",
+        "POT1",
+        "REG0"
+      ]
+    }
+  },
+  {
+    "id": "octave-up",
+    "source": "community",
+    "spnPath": "tests/corpus/community/octave-up.spn",
+    "expect": {
+      "instructions": 9,
+      "ramSamples": 0,
+      "registers": [
+        "ADCL",
+        "DACL",
+        "POT0",
+        "REG0",
+        "REG1",
+        "REG2"
+      ]
+    }
+  },
+  {
+    "id": "phaser",
+    "source": "community",
+    "spnPath": "tests/corpus/community/phaser.spn",
+    "expect": {
+      "instructions": 16,
+      "ramSamples": 0,
+      "registers": [
+        "ADCL",
+        "DACL",
+        "POT0",
+        "REG0",
+        "REG4",
+        "REG5",
+        "REG6",
+        "REG7",
+        "SIN0"
+      ]
+    }
+  },
+  {
+    "id": "resonator",
+    "source": "community",
+    "spnPath": "tests/corpus/community/resonator.spn",
+    "expect": {
+      "instructions": 27,
+      "ramSamples": 3072,
+      "registers": [
+        "ADCL",
+        "DACL",
+        "POT0",
+        "REG0",
+        "REG1",
+        "REG2",
+        "REG3",
+        "REG4"
+      ]
+    }
+  },
+  {
+    "id": "reverse-delay",
+    "source": "community",
+    "spnPath": "tests/corpus/community/reverse-delay.spn",
+    "expect": {
+      "instructions": 6,
+      "ramSamples": 8192,
+      "registers": [
+        "ADCL",
+        "DACL",
+        "POT0"
+      ]
+    }
+  },
+  {
+    "id": "shimmer-verb",
+    "source": "community",
+    "spnPath": "tests/corpus/community/shimmer-verb.spn",
+    "expect": {
+      "instructions": 17,
+      "ramSamples": 29884,
+      "registers": [
+        "ADCL",
+        "DACL",
+        "REG0",
+        "REG1",
+        "SIN0"
+      ]
+    }
+  },
+  {
+    "id": "slapback-echo",
+    "source": "community",
+    "spnPath": "tests/corpus/community/slapback-echo.spn",
+    "expect": {
+      "instructions": 7,
+      "ramSamples": 2000,
+      "registers": [
+        "ADCL",
+        "DACL",
+        "POT0",
+        "REG0"
+      ]
+    }
+  },
+  {
+    "id": "spring-reverb",
+    "source": "community",
+    "spnPath": "tests/corpus/community/spring-reverb.spn",
+    "expect": {
+      "instructions": 20,
+      "ramSamples": 16624,
+      "registers": [
+        "ADCL",
+        "DACL",
+        "REG0",
+        "REG1",
+        "REG2",
+        "REG3",
+        "REG4"
+      ]
+    }
+  },
+  {
+    "id": "tape-echo",
+    "source": "community",
+    "spnPath": "tests/corpus/community/tape-echo.spn",
+    "expect": {
+      "instructions": 21,
+      "ramSamples": 19000,
+      "registers": [
+        "ADCL",
+        "DACL",
+        "REG0",
+        "REG1",
+        "REG2",
+        "REG3"
+      ]
+    }
+  },
+  {
+    "id": "vibrato",
+    "source": "community",
+    "spnPath": "tests/corpus/community/vibrato.spn",
+    "expect": {
+      "instructions": 8,
+      "ramSamples": 2048,
+      "registers": [
+        "ADCL",
+        "DACL",
+        "POT0",
+        "SIN0"
+      ]
+    }
+  }
+]

@@ -1,0 +1,36 @@
+; Classic Phaser
+; Allpass filter chain with LFO modulation
+
+equ input adcl
+equ output dacl
+
+; Initialize LFO for sweep
+skp run, init_done
+wlds SIN0, 8, 80
+init_done:
+
+; Read input signal
+ldax input
+wrax REG0, 1
+
+; First allpass stage
+rdax REG0, 1
+rdfx REG4, 0.5
+wrax REG4, 1
+
+; Second allpass stage  
+rdfx REG5, 0.5
+wrax REG5, 1
+
+; Third allpass stage
+rdfx REG6, 0.5
+wrax REG6, 1
+
+; Fourth allpass stage
+rdfx REG7, 0.5
+wrax REG7, 0
+
+; Mix phased signal with dry
+rdax REG0, 0.7
+mulx POT0          ; Depth control
+wrax output, 0

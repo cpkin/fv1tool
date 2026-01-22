@@ -1,0 +1,16 @@
+; Bit Crusher
+; Digital degradation effect
+
+equ input ADCL
+equ output DACL
+
+; Read input
+ldax input
+
+; Reduce bit depth by quantization
+sof 0.05, 0        ; Scale down by POT
+mulx POT0
+and %01111000_00000000_00000000  ; Bit reduction mask
+sof 20, 0          ; Scale back up
+
+wrax output, 0

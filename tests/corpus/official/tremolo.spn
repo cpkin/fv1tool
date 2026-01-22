@@ -1,0 +1,20 @@
+; Tremolo Effect
+; Amplitude modulation using LFO
+
+equ input  ADCL
+equ output DACL
+
+; Initialize LFO
+skp RUN,main
+wlds SIN0,20,100  ; Set tremolo rate
+
+main:
+; Read input
+ldax input
+
+; Read LFO and scale
+rdax POT0,0.5     ; Depth control
+mulx SIN0
+
+; Output modulated signal
+wrax output,0

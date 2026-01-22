@@ -1,0 +1,23 @@
+; Simple Compressor
+; Peak detection and gain reduction
+
+equ input ADCL
+equ output DACL
+
+; Read input signal
+ldax input
+wrax REG0, 1
+
+; Envelope detection
+absa
+rdfx REG1, 0.001      ; Attack
+sof 1, -0.5            ; Threshold
+skp neg, no_compress
+mulx POT0              ; Ratio control
+no_compress:
+
+; Apply gain reduction
+wrax REG2, 0
+ldax REG0
+mulx REG2
+wrax output, 0

@@ -1,0 +1,37 @@
+; Simple Pitch Shifter
+; Uses two delay lines with crossfading
+
+equ input  ADCL
+equ output DACL
+
+mem delay1  8192
+mem delay2  8192
+
+; LFO for delay modulation
+skp RUN,main
+wlds SIN0,5,200    ; Slow modulation
+wlds SIN1,5,200    ; Second LFO 180deg out
+
+main:
+; Read input
+ldax input
+
+; Write to both delays
+wra  delay1,0
+wra  delay2,0
+
+; Read from first delay with LFO
+cho rda,SIN0,REG|COMPC,delay1
+cho rda,SIN0,0,delay1+256
+wrax REG0,0
+
+; Read from second delay with inverted LFO  
+cho rda,SIN1,REG|COMPC,delay2
+cho rda,SIN1,0,delay2+256
+wrax REG1,0
+
+; Mix and output
+ldax REG0
+sof 0.5,0
+rdax REG1,0.5
+wrax output,0

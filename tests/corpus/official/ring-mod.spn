@@ -1,0 +1,19 @@
+; Ring Modulator
+; Multiply input with LFO for ring mod effect
+
+equ input  ADCL
+equ output DACL
+
+; Setup LFO
+skp RUN,main
+wlds SIN0,50,200   ; Carrier frequency
+
+main:
+; Read input
+ldax input
+
+; Multiply with carrier
+mulx SIN0
+
+; Output
+wrax output,0

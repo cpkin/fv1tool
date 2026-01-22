@@ -1,0 +1,40 @@
+; Shimmer Reverb
+; Reverb with pitch-shifted feedback
+
+equ input ADCL
+equ output DACL
+
+mem delay1 8192
+mem delay2 8192
+mem delay3 6000
+mem delay4 7500
+
+; Setup pitch shift LFO
+skp run, start
+wlds SIN0, 2, 100
+
+start:
+; Read input
+ldax input
+wrax REG0, 1
+
+; Main reverb delays
+wra delay1, 0
+rda delay1#, 0.7
+wra delay2, 0
+rda delay2#, 0.6
+
+; Pitch shifted feedback
+wra delay3, 0
+cho rda, SIN0, REG|COMPC, delay3
+cho rda, SIN0, 0, delay3+512
+wrax REG1, 0.4
+
+; Additional diffusion
+wra delay4, 0
+rda delay4#, 0.5
+
+; Mix and output
+rdax REG0, 0.4
+rdax REG1, 0.3
+wrax output, 0

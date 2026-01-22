@@ -1,0 +1,49 @@
+; Resonator
+; Comb filter bank for harmonic resonance
+
+equ input ADCL
+equ output DACL
+
+mem comb1 512
+mem comb2 683
+mem comb3 853
+mem comb4 1024
+
+; Read input
+ldax input
+wrax REG0, 1
+
+; Comb filter 1
+wra comb1, 0
+rda comb1#, 0.9
+mulx POT0           ; Resonance
+wrax REG1, 0
+
+; Comb filter 2
+ldax REG0
+wra comb2, 0
+rda comb2#, 0.85
+mulx POT0
+wrax REG2, 0
+
+; Comb filter 3
+ldax REG0
+wra comb3, 0
+rda comb3#, 0.8
+mulx POT0
+wrax REG3, 0
+
+; Comb filter 4
+ldax REG0
+wra comb4, 0
+rda comb4#, 0.75
+mulx POT0
+wrax REG4, 0
+
+; Mix all combs
+ldax REG1
+sof 0.25,0
+rdax REG2, 0.25
+rdax REG3, 0.25
+rdax REG4, 0.25
+wrax output, 0

@@ -1,0 +1,27 @@
+; Lo-Fi Effect
+; Bit crushing and sample rate reduction simulation
+
+equ input ADCL
+equ output DACL
+
+mem sample_hold 1
+
+; Read input
+ldax input
+
+; Simulate bit reduction with quantization
+sof 0.1, 0           ; Scale down
+and %01111111_00000000_00000000  ; Bit mask
+sof 10, 0            ; Scale back up
+
+; Sample and hold for rate reduction
+wrax REG0, 1
+rda sample_hold, 1
+mulx POT1            ; Rate control
+sof 1, -0.5
+skp neg, do_hold
+ldax REG0
+do_hold:
+wra sample_hold, 0
+
+wrax output, 0

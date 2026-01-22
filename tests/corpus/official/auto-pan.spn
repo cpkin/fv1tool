@@ -1,0 +1,22 @@
+; Auto-Panner
+; Stereo auto-pan effect using LFO
+
+equ input   ADCL
+equ outputL DACL
+equ outputR DACR
+
+; Setup LFO
+skp RUN,main
+wlds SIN0,15,100   ; Pan rate
+
+main:
+; Read input
+ldax input
+mulx SIN0
+wrax outputL,0
+
+; Right channel uses inverted LFO
+ldax input
+mulx SIN0
+sof  -0.5,0.5          ; Crossfade formula
+wrax outputR,0

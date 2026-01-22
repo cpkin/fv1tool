@@ -1,0 +1,30 @@
+; Dual Delay - Ping Pong
+; Left/Right alternating delays
+
+equ inputL ADCL
+equ inputR ADCR
+equ outputL DACL
+equ outputR DACR
+
+mem delayL 10000
+mem delayR 10000
+
+; Process left channel
+ldax inputL
+wra delayL, 0
+rda delayL#, 0.5
+wrax REG0, 1       ; Save left delayed signal
+
+; Cross-feed to right
+rda delayR#, 0.3
+wrax outputL, 0
+
+; Process right channel
+ldax inputR
+wra delayR, 0
+rda delayR#, 0.5
+wrax REG1, 1       ; Save right delayed signal
+
+; Cross-feed to left
+rdax REG0, 0.3
+wrax outputR, 0

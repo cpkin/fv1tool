@@ -1,0 +1,26 @@
+; Vibrato Effect
+; Pitch modulation using delay line
+
+equ input ADCL
+equ output DACL
+
+mem delay 2048
+
+; Setup modulation LFO
+skp run, main
+wlds SIN0, 5, 50
+
+main:
+; Read and save input
+ldax input
+
+; Write to delay line
+wra delay, 0
+
+; Read with LFO modulation for pitch shift
+cho rda, SIN0, REG|COMPC, delay
+cho rda, SIN0, 0, delay+128
+
+; Apply depth control
+mulx POT0
+wrax output, 0

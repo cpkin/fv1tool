@@ -1,0 +1,19 @@
+; Basic Delay Example
+; Simple single-tap delay with feedback
+
+equ input  ADCL
+equ output DACL
+
+mem delay  16384
+
+; Read input
+ldax input
+
+; Write to delay line
+wra  delay,0
+
+; Read from delay with feedback
+rda  delay#,0.5
+
+; Mix with input and output
+wrax output,0

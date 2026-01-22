@@ -1,0 +1,39 @@
+; Spring Reverb Emulation
+; Multiple irregular delays with filtering
+
+equ input ADCL
+equ output DACL
+
+mem spring1 2341
+mem spring2 3571
+mem spring3 4789
+mem spring4 5923
+
+; Read input and apply pre-delay
+ldax input
+wrax REG0, 1
+
+; Spring tank simulation with irregular delays
+wra spring1, 0
+rda spring1#, 0.8
+rdfx REG1, 0.2       ; Damping
+wrax REG1, 0.5
+
+wra spring2, 0
+rda spring2#, 0.75
+rdfx REG2, 0.25
+wrax REG2, 0.4
+
+wra spring3, 0
+rda spring3#, 0.7
+rdfx REG3, 0.3
+wrax REG3, 0.3
+
+wra spring4, 0
+rda spring4#, 0.65
+rdfx REG4, 0.35
+wrax REG4, 0
+
+; Mix with dry
+rdax REG0, 0.5
+wrax output, 0

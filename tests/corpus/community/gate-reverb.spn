@@ -1,0 +1,33 @@
+; Gated Reverb
+; Reverb with envelope-controlled gate
+
+equ input ADCL
+equ output DACL
+
+mem rev1 4000
+mem rev2 5500
+mem rev3 7000
+
+; Envelope follower
+ldax input
+wrax REG0, 1
+absa
+rdfx REG7, 0.001   ; Fast attack
+wrax REG7, 0
+
+; Reverb processing
+ldax REG0
+wra rev1, 0
+rda rev1#, 0.7
+wra rev2, 0
+rda rev2#, 0.6
+wra rev3, 0
+rda rev3#, 0.5
+
+; Apply gate based on envelope
+mulx REG7
+mulx POT1          ; Gate threshold
+
+; Mix with dry
+rdax REG0, 0.5
+wrax output, 0

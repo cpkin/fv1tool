@@ -1,0 +1,34 @@
+; Leslie Speaker Simulator
+; Rotating speaker effect using doppler shift
+
+equ input ADCL
+equ outputL DACL
+equ outputR DACR
+
+mem delay1 1024
+mem delay2 1024
+
+; Setup rotation LFOs
+skp run, start
+wlds SIN0, 3, 80    ; Slow rotation
+wlds SIN1, 3, 80    ; 90 deg phase shift
+
+start:
+; Read input
+ldax input
+wrax REG0, 1
+
+; Left speaker - doppler shift
+wra delay1, 0
+cho rda, SIN0, REG|COMPC, delay1
+cho rda, SIN0, 0, delay1+256
+mulx SIN0          ; AM for distance
+wrax outputL, 0
+
+; Right speaker - opposite phase
+ldax REG0
+wra delay2, 0
+cho rda, SIN1, REG|COMPC, delay2
+cho rda, SIN1, 0, delay2+256
+mulx SIN1
+wrax outputR, 0

@@ -1,0 +1,27 @@
+; Stereo Reverb
+; Simple stereo reverb using multiple delays
+
+equ input   ADCL
+equ outputL DACL
+equ outputR DACR
+
+mem delay1  3000
+mem delay2  4000
+mem delay3  5000
+mem delay4  6500
+
+; Left channel
+ldax input
+wra  delay1,0
+rda  delay1#,0.6
+wra  delay2,0
+rda  delay2#,0.5
+wrax outputL,0
+
+; Right channel  
+ldax input
+wra  delay3,0
+rda  delay3#,0.6
+wra  delay4,0
+rda  delay4#,0.5
+wrax outputR,0

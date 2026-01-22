@@ -1,0 +1,17 @@
+; Simple EQ
+; Single shelving filter
+
+equ input  ADCL
+equ output DACL
+
+; Read input
+ldax input
+wrax REG0,1
+
+; Simple highpass filter
+rdfx REG1,0.5
+wrax REG1,0
+
+; Mix and output
+rdax REG0,0.5
+wrax output,0

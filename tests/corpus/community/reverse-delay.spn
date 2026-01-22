@@ -1,0 +1,19 @@
+; Reverse Delay
+; Backwards playback effect
+
+equ input ADCL
+equ output DACL
+
+mem buffer 8192
+
+; Write to buffer forward
+ldax input
+wra buffer, 0
+
+; Read from buffer backward
+rda buffer+8192, -0.5
+rda buffer+4096, 0.3
+
+; Mix with dry
+rdax POT0, 0.5
+wrax output, 0

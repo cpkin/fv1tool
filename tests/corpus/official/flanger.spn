@@ -1,0 +1,26 @@
+; Flanger Effect
+; Short modulated delay mixed with dry signal
+
+equ input  ADCL
+equ output DACL
+
+mem delay  1024
+
+; Setup LFO
+skp RUN,main
+wlds SIN0,10,100   ; Flange rate
+
+main:
+; Read input and save
+ldax input
+wrax REG0,1
+
+; Write to delay
+wra  delay,0
+
+; Read with modulation
+rmpa 0.5
+
+; Mix with dry signal
+rdax REG0,0.7
+wrax output,0

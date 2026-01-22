@@ -1,0 +1,42 @@
+; Tape Echo Emulation
+; Multiple feedback taps with lowpass filtering
+
+EQU INPUT  ADCL      ; Input from left ADC
+EQU OUTPUT DACL      ; Output to left DAC
+
+MEM DELAY1 5000
+MEM DELAY2 6000
+MEM DELAY3 8000
+
+; Initialize
+SKP RUN, START
+
+START:
+    LDAX INPUT
+    WRAX REG0, 1        ; Save dry signal
+    
+    ; First tap with feedback
+    WRA DELAY1, 0
+    RDA DELAY1#, 0.6
+    RDFX REG1, 0.3      ; Lowpass filter
+    WRAX REG1, 0
+    
+    ; Second tap
+    WRA DELAY2, 0  
+    RDA DELAY2#, 0.4
+    RDFX REG2, 0.3
+    WRAX REG2, 0
+    
+    ; Third tap
+    WRA DELAY3, 0
+    RDA DELAY3#, 0.3
+    RDFX REG3, 0.3
+    WRAX REG3, 0
+    
+    ; Mix all taps with dry
+    LDAX REG0
+    SOF 0.5,0
+    RDAX REG1, 0.3
+    RDAX REG2, 0.2
+    RDAX REG3, 0.15
+    WRAX OUTPUT, 0
