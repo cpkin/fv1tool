@@ -34,9 +34,9 @@ SpinGPT delivers a browser-based FV-1 SpinASM validator and audio simulator thro
 **Plans:** 3 plans
 
 Plans:
-- [ ] 00-01-PLAN.md — Lock SpinASM dialect spec and simulator fidelity strategy
+- [x] 00-01-PLAN.md — Lock SpinASM dialect spec and simulator fidelity strategy
 - [x] 00-02-PLAN.md — Define metadata schema v1 and documentation
-- [ ] 00-03-PLAN.md — Build test corpus manifest and document community gaps
+- [x] 00-03-PLAN.md — Build test corpus manifest and document community gaps
 
 ---
 
@@ -161,13 +161,13 @@ Plans:
 
 | Phase | Status | Progress | Completed |
 |-------|--------|----------|-----------|
-| 0 - Foundation & Test Infrastructure | Not Started | 0/6 requirements | — |
+| 0 - Foundation & Test Infrastructure | Complete | 6/6 requirements | 2026-01-22 |
 | 1 - Code Validation & Analysis | Not Started | 0/15 requirements | — |
 | 2 - Audio Simulation Engine | Not Started | 0/12 requirements | — |
 | 3 - Audio Interaction & Export | Not Started | 0/12 requirements | — |
 | 4 - Signal Path Diagrams | Not Started | 0/5 requirements | — |
 
-**Overall:** 0/50 requirements complete (0%)
+**Overall:** 6/50 requirements complete (12%)
 
 ---
 
