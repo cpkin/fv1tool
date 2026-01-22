@@ -182,18 +182,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 | KNOB-02 | Phase 3 | Pending |
 | KNOB-03 | Phase 3 | Pending |
 | KNOB-04 | Phase 3 | Pending |
+| EXP-01 | Phase 3 | Pending |
+| EXP-02 | Phase 3 | Pending |
+| EXP-03 | Phase 3 | Pending |
 | DIAG-01 | Phase 4 | Pending |
 | DIAG-02 | Phase 4 | Pending |
 | DIAG-03 | Phase 4 | Pending |
 | DIAG-04 | Phase 4 | Pending |
 | DIAG-05 | Phase 4 | Pending |
-| EXP-01 | Phase 4 | Pending |
-| EXP-02 | Phase 4 | Pending |
-| EXP-03 | Phase 4 | Pending |
 
 **Coverage:**
-- v1 requirements: 54 total
-- Mapped to phases: 54
+- v1 requirements: 50 total
+- Mapped to phases: 50
 - Unmapped: 0 ✓
 
 ---
