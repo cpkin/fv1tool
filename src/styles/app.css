@@ -500,6 +500,266 @@ body {
   color: var(--warning);
 }
 
+/* Fidelity Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: var(--panel);
+  border-radius: 12px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.25);
+}
+
+.modal-header {
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.fidelity-intro {
+  margin: 0 0 16px;
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+
+.fidelity-description {
+  background: #f8f6f3;
+  border-radius: 6px;
+  padding: 16px;
+  margin: 16px 0;
+  border: 1px solid var(--border);
+}
+
+.fidelity-description pre {
+  margin: 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  color: var(--ink);
+}
+
+.fidelity-footer {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.fidelity-disclaimer {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--warning);
+  font-weight: 500;
+}
+
+.modal-actions {
+  padding: 16px 24px 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Diagnostics Panel */
+.diagnostics-panel {
+  background: var(--panel);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--panel-shadow);
+}
+
+.diagnostics-loading,
+.diagnostics-error {
+  padding: 24px;
+  text-align: center;
+  color: var(--ink-muted);
+}
+
+.corpus-summary {
+  margin-top: 16px;
+}
+
+.corpus-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.status-pass {
+  color: var(--accent);
+}
+
+.status-fail {
+  color: var(--warning);
+}
+
+.status-error {
+  color: #c44;
+}
+
+.corpus-pass-rate {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pass-rate-bar {
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.pass-rate-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+
+.pass-rate-label {
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+}
+
+.expand-toggle {
+  background: none;
+  border: none;
+  font-size: 0.85rem;
+  color: var(--accent);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 500;
+}
+
+.corpus-details {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.corpus-results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.corpus-results-table th {
+  text-align: left;
+  padding: 8px;
+  border-bottom: 2px solid var(--border);
+  color: var(--ink-muted);
+  font-weight: 600;
+}
+
+.corpus-results-table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.result-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.85rem;
+}
+
+.corpus-errors {
+  margin-top: 20px;
+  padding: 16px;
+  background: #fff3f0;
+  border-radius: 6px;
+  border: 1px solid var(--warning);
+}
+
+.corpus-errors h3 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  color: var(--warning);
+}
+
+.error-detail {
+  margin-bottom: 12px;
+}
+
+.error-detail ul {
+  margin: 4px 0 0;
+  padding-left: 20px;
+  font-size: 0.85rem;
+}
+
+/* Simulation Warnings */
+.simulation-warnings {
+  margin: 16px 0;
+  padding: 16px;
+  background: #fff9f0;
+  border-radius: 8px;
+  border: 1px solid var(--warning);
+}
+
+.warnings-header {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  color: var(--warning);
+}
+
+.warnings-list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.warning-item {
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.warning-info {
+  color: var(--ink);
+}
+
+.warning-warning {
+  color: var(--warning);
+}
+
 @media (max-width: 900px) {
   .app-main {
     grid-template-columns: 1fr;

@@ -5,8 +5,10 @@ import { parseSpinAsm } from '../parser/parseSpinAsm'
 import { compileProgram } from '../fv1/compileProgram'
 import { renderSimulation } from '../audio/renderSimulation'
 import { decodeAudio } from '../audio/decodeAudio'
+import { analyzeSimulationLimitations } from '../fv1/warnings'
 import ProgressBar from './ProgressBar'
 import type { IOMode } from '../fv1/types'
+import type { SimulationWarning } from '../fv1/warnings'
 
 const SUPPORTED_AUDIO_TYPES = ['audio/wav', 'audio/mpeg', 'audio/mp4', 'audio/x-m4a']
 const SUPPORTED_EXTENSIONS = ['.wav', '.mp3', '.m4a']
@@ -31,6 +33,7 @@ function validateAudioFile(file: File): string | null {
 export default function SimulationPanel() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [warnings, setWarnings] = useState<SimulationWarning[]>([])
   
   const {
     uploadedFile,
@@ -141,6 +144,10 @@ export default function SimulationPanel() {
         setRenderError(`Compilation error: ${message}`)
         return
       }
+      
+      // Analyze for simulation limitations
+      const programWarnings = analyzeSimulationLimitations(compiled.instructions)
+      setWarnings(programWarnings)
       
       // Render simulation
       const result = await renderSimulation({
@@ -256,6 +263,20 @@ export default function SimulationPanel() {
         <div className="render-error">
           <span className="error-icon">❌</span>
           <span>{renderError}</span>
+        </div>
+      )}
+      
+      {/* Simulation warnings */}
+      {warnings.length > 0 && (
+        <div className="simulation-warnings">
+          <h3 className="warnings-header">⚠️ Simulation Limitations</h3>
+          <ul className="warnings-list">
+            {warnings.map((warning, idx) => (
+              <li key={idx} className={`warning-item warning-${warning.severity}`}>
+                <strong>{warning.type}:</strong> {warning.message}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
       
