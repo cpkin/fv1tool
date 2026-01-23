@@ -1,7 +1,7 @@
 # Project State: SpinGPT
 
 **Last Updated:** 2026-01-23
-**Status:** Phase 2 In Progress (1/6 plans complete)
+**Status:** Phase 2 In Progress (2/6 plans complete)
 
 ---
 
@@ -18,16 +18,16 @@ Building Phase 2 audio simulation engine: FV-1 fixed-point core complete, implem
 ## Current Position
 
 Phase: 2 of 5 (Audio Simulation Engine)
-Plan: 1 of 6 in current phase
+Plan: 2 of 6 in current phase
 Status: In progress
-Last activity: 2026-01-23 - Completed 02-01-PLAN.md
+Last activity: 2026-01-23 - Completed 02-03-PLAN.md
 
 ### Progress
 ```
 Phase 0: [████████████████████] 3/3 plans (100%)
 Phase 1: [████████████████████] 4/4 plans (100%)
-Phase 2: [███░░░░░░░░░░░░░░░░░] 1/6 plans (17%)
-Overall: [████████████████░░░░] 8/13 plans (62%)
+Phase 2: [███████░░░░░░░░░░░░░] 2/6 plans (33%)
+Overall: [██████████████░░░░░░] 9/13 plans (69%)
 ```
 
 ---
@@ -35,8 +35,8 @@ Overall: [████████████████░░░░] 8/13 pla
 ## Performance Metrics
 
 ### Velocity
-- **Plans completed:** 8
-- **Requirements completed:** 24/50 (48%)
+- **Plans completed:** 9
+- **Requirements completed:** 26/50 (52%)
 - **Phases completed:** 1.17/5 (23%)
 
 ### Quality
@@ -45,7 +45,7 @@ Overall: [████████████████░░░░] 8/13 pla
 - **Test coverage:** Not yet applicable
 
 ### Efficiency
-- **Avg time per plan:** 5 min (2 + 6 + 0 + 0 + 11 + 8 + 9 + 4 = 40 min / 8 plans)
+- **Avg time per plan:** 5 min (2 + 6 + 0 + 0 + 11 + 8 + 9 + 4 + 6 = 46 min / 9 plans)
 - **Replanning rate:** 0%
 
 ---
@@ -71,6 +71,7 @@ Overall: [████████████████░░░░] 8/13 pla
 | 2026-01-23 | Use 32 kHz sample rate instead of 32.768 kHz | Product requirement specifies 32 kHz for user-facing consistency | Slight timing difference in reverb/delay calculations vs hardware (acceptable for audition-quality simulation) |
 | 2026-01-23 | Store delay RAM as Float32Array | JavaScript float math faster than simulating fixed-point at every read/write | Matches FV-1 datasheet note that delay RAM is floating-point with limited resolution |
 | 2026-01-23 | Default instruction handlers to NOP | Enables incremental opcode implementation without breaking type-checks | Programs won't produce correct output until opcodes are implemented (Plan 02-02, 02-03, 02-04) |
+| 2026-01-23 | Normalize rendered output to -1 dB via peak scaling | Keeps playback headroom consistent across rendered buffers | Render pipeline output aligns with FV-1 level expectations |
 
 ### Active Todos
 None
@@ -82,20 +83,20 @@ None
 
 ## Session Continuity
 
-Last session: 2026-01-23T18:39:07Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-01-23T20:57:14Z
+Stopped at: Completed 02-03-PLAN.md
 Resume file: None
 
 ### What Just Happened
-- Completed Plan 02-01: FV-1 Fixed-Point Core and Interpreter Skeleton
-- Implemented S1.23 fixed-point math with saturating arithmetic
-- Created FV1State model with ACC, PACC, registers, and delay RAM
-- Built interpreter execution loop with 128-instruction sample processing
+- Completed Plan 02-03: Audio decode/resample pipeline and render API
+- Added Web Audio decoding helper for File/ArrayBuffer inputs
+- Implemented 32 kHz resampling via OfflineAudioContext
+- Built offline render pipeline with limits, progress, and normalization
 
 ### What's Next
 1. Execute Plan 02-02: Arithmetic Opcodes (RDAX, SOF, MULX, etc.)
-2. Execute Plan 02-03: Delay Memory Opcodes (RDA, WRA, WRAP)
-3. Execute Plan 02-04: Control Flow Opcodes (SKP, JMP)
+2. Execute Plan 02-04: Simulation panel UI and render wiring
+3. Execute Plan 02-05: Demo assets and layout styling
 
 ### Context for Next Session
 - **Project:** Browser-based FV-1 SpinASM validator and audio simulator

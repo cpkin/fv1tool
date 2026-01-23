@@ -114,14 +114,15 @@ Plans:
 6. Simulator passes validation against all official Spin demo programs from test corpus
 7. UI displays simulation limitations and known deviations from hardware behavior
 
-**Plans:** 4 plans
+**Plans:** 6 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Build FV-1 fixed-point core and interpreter skeleton
+- [x] 02-01-PLAN.md — Build FV-1 fixed-point core and interpreter skeleton
 - [ ] 02-02-PLAN.md — Implement opcode handlers, compiler, and IO modes
-- [ ] 02-03-PLAN.md — Add audio decode/resample pipeline and render API
-- [ ] 02-04-PLAN.md — Add simulation UI, demos, and editor render wiring
-- [ ] 02-05-PLAN.md — Add corpus validation harness and fidelity messaging
+- [x] 02-03-PLAN.md — Add audio decode/resample pipeline and render API
+- [ ] 02-04-PLAN.md — Build simulation panel UI and editor render wiring
+- [ ] 02-05-PLAN.md — Add demo assets and layout styling
+- [ ] 02-06-PLAN.md — Add corpus validation harness and fidelity messaging
 
 ---
 
@@ -184,7 +185,7 @@ Plans:
 |-------|--------|----------|-----------|
 | 0 - Foundation & Test Infrastructure | Complete | 6/6 requirements | 2026-01-22 |
 | 1 - Code Validation & Analysis | Complete | 15/15 requirements | 2026-01-23 |
-| 2 - Audio Simulation Engine | Not Started | 0/12 requirements | — |
+| 2 - Audio Simulation Engine | In progress | 2/12 requirements | — |
 | 3 - Audio Interaction & Export | Not Started | 0/12 requirements | — |
 | 4 - Signal Path Diagrams | Not Started | 0/5 requirements | — |
 
