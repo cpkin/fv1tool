@@ -76,7 +76,7 @@ Plans:
 Plans:
 - [x] 01-01-PLAN.md — Scaffold app and validation UI shell
 - [x] 01-02-PLAN.md — Implement SpinASM grammar and parser diagnostics
-- [ ] 01-03-PLAN.md — Add resource analysis and lint rules
+- [x] 01-03-PLAN.md — Add resource analysis and lint rules
 - [ ] 01-04-PLAN.md — Wire diagnostics into UI and copy payload
 
 ---
