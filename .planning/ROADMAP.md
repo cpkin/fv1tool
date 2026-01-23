@@ -89,6 +89,8 @@ Plans:
 
 **Goal:** Users can render audio through FV-1 simulation and hear how their code affects sound
 
+**Status:** Complete (2026-01-23)
+
 **Dependencies:** Phase 1 (requires parser output, AST, validated code)
 
 **Requirements:**
@@ -122,7 +124,7 @@ Plans:
 - [x] 02-03-PLAN.md — Add audio decode/resample pipeline and render API
 - [x] 02-04-PLAN.md — Build simulation panel UI and editor render wiring
 - [x] 02-05-PLAN.md — Add demo assets and layout styling
-- [ ] 02-06-PLAN.md — Add corpus validation harness and fidelity messaging
+- [x] 02-06-PLAN.md — Add corpus validation harness and fidelity messaging
 
 ---
 
@@ -185,11 +187,11 @@ Plans:
 |-------|--------|----------|-----------|
 | 0 - Foundation & Test Infrastructure | Complete | 6/6 requirements | 2026-01-22 |
 | 1 - Code Validation & Analysis | Complete | 15/15 requirements | 2026-01-23 |
-| 2 - Audio Simulation Engine | In progress | 6/12 requirements | — |
+| 2 - Audio Simulation Engine | Complete | 8/12 requirements | 2026-01-23 |
 | 3 - Audio Interaction & Export | Not Started | 0/12 requirements | — |
 | 4 - Signal Path Diagrams | Not Started | 0/5 requirements | — |
 
-**Overall:** 25/50 requirements complete (50%)
+**Overall:** 29/50 requirements complete (58%)
 
 ---
 
