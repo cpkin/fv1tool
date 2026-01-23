@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { basicSetup } from 'codemirror'
 import { lineNumbers } from '@codemirror/view'
 
 import { editorExtensions } from './editorExtensions'
+import { spinasm } from '../language'
+import { analysisPipeline } from '../analysis/analysisPipeline'
+import { useValidationStore } from '../store/validationStore'
 
 interface SpinEditorProps {
   value: string
@@ -14,15 +17,39 @@ interface SpinEditorProps {
 const SpinEditor = ({ value, onChange }: SpinEditorProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const viewRef = useRef<EditorView | null>(null)
+  const debounceRef = useRef<number | null>(null)
+  const initialValueRef = useRef(value)
+  const setDiagnostics = useValidationStore((state) => state.setDiagnostics)
+  const setResourceUsage = useValidationStore((state) => state.setResourceUsage)
+
+  const runAnalysis = useCallback(
+    (sourceText: string) => {
+      const result = analysisPipeline(sourceText)
+      setDiagnostics(result.diagnostics)
+      setResourceUsage(result.resources.usage)
+    },
+    [setDiagnostics, setResourceUsage]
+  )
 
   const updateListener = useMemo(
     () =>
       EditorView.updateListener.of((update) => {
-        if (update.docChanged) {
-          onChange(update.state.doc.toString())
+        if (!update.docChanged) {
+          return
         }
+
+        const nextSource = update.state.doc.toString()
+        onChange(nextSource)
+
+        if (debounceRef.current) {
+          window.clearTimeout(debounceRef.current)
+        }
+
+        debounceRef.current = window.setTimeout(() => {
+          runAnalysis(nextSource)
+        }, 320)
       }),
-    [onChange],
+    [onChange, runAnalysis]
   )
 
   useEffect(() => {
@@ -32,7 +59,7 @@ const SpinEditor = ({ value, onChange }: SpinEditorProps) => {
 
     const startState = EditorState.create({
       doc: value,
-      extensions: [basicSetup, lineNumbers(), updateListener, ...editorExtensions],
+      extensions: [basicSetup, lineNumbers(), spinasm, updateListener, ...editorExtensions],
     })
 
     const view = new EditorView({
@@ -41,12 +68,16 @@ const SpinEditor = ({ value, onChange }: SpinEditorProps) => {
     })
 
     viewRef.current = view
+    runAnalysis(initialValueRef.current)
 
     return () => {
+      if (debounceRef.current) {
+        window.clearTimeout(debounceRef.current)
+      }
       view.destroy()
       viewRef.current = null
     }
-  }, [updateListener])
+  }, [runAnalysis, updateListener])
 
   useEffect(() => {
     const view = viewRef.current
