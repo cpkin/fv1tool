@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 
+import { formatCopyPayload } from '../diagnostics/formatCopyPayload'
 import { useValidationStore } from '../store/validationStore'
 
 const CopyDiagnosticsButton = () => {
@@ -9,32 +10,7 @@ const CopyDiagnosticsButton = () => {
   const [copied, setCopied] = useState(false)
 
   const payload = useMemo(() => {
-    const diagnosticsText = diagnostics
-      .map((diagnostic) => {
-        const location = diagnostic.line
-          ? `Line ${diagnostic.line}${diagnostic.column ? `:${diagnostic.column}` : ''}`
-          : 'Line —'
-        const suggestion = diagnostic.suggestedFix
-          ? ` Suggested fix: ${diagnostic.suggestedFix}`
-          : ''
-        return `- [${diagnostic.severity.toUpperCase()}] ${location}: ${diagnostic.message}${suggestion}`
-      })
-      .join('\n')
-
-    return [
-      'SpinGPT Diagnostics',
-      '',
-      'Resource Usage:',
-      `- Instructions: ${resourceUsage.instructions.used}/${resourceUsage.instructions.max}`,
-      `- Delay RAM: ${resourceUsage.delayRam.used}/${resourceUsage.delayRam.max} (${resourceUsage.delayRam.ms} ms)`,
-      `- Registers: ${resourceUsage.registers.used}/${resourceUsage.registers.max}`,
-      '',
-      'Diagnostics:',
-      diagnosticsText || '- None',
-      '',
-      'Source:',
-      source.trim() ? source : '[No source provided]',
-    ].join('\n')
+    return formatCopyPayload({ source, diagnostics, resourceUsage })
   }, [diagnostics, resourceUsage, source])
 
   const handleCopy = async () => {
