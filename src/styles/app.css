@@ -181,6 +181,10 @@ body {
   gap: 16px;
 }
 
+.diagnostics-shell {
+  gap: 24px;
+}
+
 .panel-header {
   display: flex;
   align-items: baseline;
@@ -319,14 +323,11 @@ body {
 
 /* Simulation Panel */
 .simulation-panel {
-  background: var(--panel);
-  border-radius: 20px;
-  border: 1px solid var(--border);
-  padding: 20px;
-  box-shadow: var(--panel-shadow);
   display: flex;
   flex-direction: column;
   gap: 16px;
+  padding-top: 24px;
+  border-top: 2px solid var(--border);
 }
 
 .upload-area {
