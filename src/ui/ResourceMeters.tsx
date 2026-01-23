@@ -6,10 +6,22 @@ const ResourceMeters = () => {
   const resourceUsage = useValidationStore((state) => state.resourceUsage)
   const diagnostics = useValidationStore((state) => state.diagnostics)
 
-  const warningCount = useMemo(
-    () => diagnostics.filter((diagnostic) => diagnostic.severity === 'warning').length,
-    [diagnostics],
-  )
+  const hasDiagnosticCode = useMemo(() => {
+    return (codes: string[]) =>
+      diagnostics.some(
+        (diagnostic) =>
+          (diagnostic.severity === 'warning' || diagnostic.severity === 'error') &&
+          codes.some((code) => diagnostic.message.startsWith(code))
+      )
+  }, [diagnostics])
+
+  const instructionWarning = resourceUsage.instructions.used > resourceUsage.instructions.max
+  const delayWarning =
+    resourceUsage.delayRam.used > resourceUsage.delayRam.max ||
+    hasDiagnosticCode(['LINT-02', 'LINT-03', 'LINT-07'])
+  const registerWarning =
+    resourceUsage.registers.used > resourceUsage.registers.max ||
+    hasDiagnosticCode(['LINT-04'])
 
   const meters: Array<{
     label: string
@@ -21,16 +33,18 @@ const ResourceMeters = () => {
     {
       label: 'Instructions',
       ...resourceUsage.instructions,
+      warning: instructionWarning,
     },
     {
       label: 'Delay RAM',
       ...resourceUsage.delayRam,
       meta: `${resourceUsage.delayRam.ms} ms`,
+      warning: delayWarning,
     },
     {
       label: 'Registers',
       ...resourceUsage.registers,
-      warning: warningCount > 0,
+      warning: registerWarning,
     },
   ]
 
