@@ -121,7 +121,7 @@ Plans:
 - [ ] 02-02-PLAN.md — Implement opcode handlers, compiler, and IO modes
 - [x] 02-03-PLAN.md — Add audio decode/resample pipeline and render API
 - [x] 02-04-PLAN.md — Build simulation panel UI and editor render wiring
-- [ ] 02-05-PLAN.md — Add demo assets and layout styling
+- [x] 02-05-PLAN.md — Add demo assets and layout styling
 - [ ] 02-06-PLAN.md — Add corpus validation harness and fidelity messaging
 
 ---
@@ -185,11 +185,11 @@ Plans:
 |-------|--------|----------|-----------|
 | 0 - Foundation & Test Infrastructure | Complete | 6/6 requirements | 2026-01-22 |
 | 1 - Code Validation & Analysis | Complete | 15/15 requirements | 2026-01-23 |
-| 2 - Audio Simulation Engine | In progress | 4/12 requirements | — |
+| 2 - Audio Simulation Engine | In progress | 6/12 requirements | — |
 | 3 - Audio Interaction & Export | Not Started | 0/12 requirements | — |
 | 4 - Signal Path Diagrams | Not Started | 0/5 requirements | — |
 
-**Overall:** 23/50 requirements complete (46%)
+**Overall:** 25/50 requirements complete (50%)
 
 ---
 
