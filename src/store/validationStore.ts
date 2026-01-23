@@ -44,7 +44,7 @@ const placeholderResourceUsage: ResourceUsage = {
   },
 }
 
-const placeholderSource = `;@fx v1\n;name: lush-delay\n;io: stereo_stereo\n\n; Paste SpinASM here to validate\n\nwrax dacl, 0.5\n`
+const placeholderSource = ''
 
 export const useValidationStore = create<ValidationState>((set) => ({
   source: placeholderSource,
