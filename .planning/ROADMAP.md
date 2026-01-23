@@ -77,7 +77,7 @@ Plans:
 - [x] 01-01-PLAN.md — Scaffold app and validation UI shell
 - [x] 01-02-PLAN.md — Implement SpinASM grammar and parser diagnostics
 - [x] 01-03-PLAN.md — Add resource analysis and lint rules
-- [ ] 01-04-PLAN.md — Wire diagnostics into UI and copy payload
+- [x] 01-04-PLAN.md — Wire diagnostics into UI and copy payload
 
 ---
 
@@ -170,12 +170,12 @@ Plans:
 | Phase | Status | Progress | Completed |
 |-------|--------|----------|-----------|
 | 0 - Foundation & Test Infrastructure | Complete | 6/6 requirements | 2026-01-22 |
-| 1 - Code Validation & Analysis | In progress | 0/15 requirements | — |
+| 1 - Code Validation & Analysis | Complete | 15/15 requirements | 2026-01-23 |
 | 2 - Audio Simulation Engine | Not Started | 0/12 requirements | — |
 | 3 - Audio Interaction & Export | Not Started | 0/12 requirements | — |
 | 4 - Signal Path Diagrams | Not Started | 0/5 requirements | — |
 
-**Overall:** 6/50 requirements complete (12%)
+**Overall:** 21/50 requirements complete (42%)
 
 ---
 
