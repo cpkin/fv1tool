@@ -32,8 +32,11 @@ const buildUnknownOpcodeDiagnostics = (
 export const analysisPipeline = (source: string): AnalysisResult => {
   const parseResult = parseSpinAsm(source)
   const resources = resourceAnalyzer(parseResult)
-  const lintDiagnostics = runLintRules(parseResult, resources, source)
-  const opcodeDiagnostics = buildUnknownOpcodeDiagnostics(source, parseResult.instructions)
+  const hasContent = source.trim().length > 0
+  const lintDiagnostics = hasContent ? runLintRules(parseResult, resources, source) : []
+  const opcodeDiagnostics = hasContent
+    ? buildUnknownOpcodeDiagnostics(source, parseResult.instructions)
+    : []
 
   return {
     diagnostics: [...parseResult.diagnostics, ...opcodeDiagnostics, ...lintDiagnostics],

@@ -146,10 +146,10 @@ const findRegisterReadBeforeWrite = (
 
           diagnostics.push(
             createDiagnostic({
-              message: `LINT-04: ${registerName.toUpperCase()} is read before it is written.`,
+              severity: 'info',
+              message: `NOTE: ${registerName.toUpperCase()} is read before it is written (likely a feedback loop for delay/chorus-style effects).`,
               line: instruction.line,
               column: reference?.column ?? instruction.column,
-              suggestedFix: `Initialize ${registerName.toUpperCase()} before reading it.`,
               source,
             })
           )
