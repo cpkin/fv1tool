@@ -7,66 +7,62 @@
  * Reference: http://www.spinsemi.com/knowledge_base/inst_syntax.html
  */
 
-import type { InstructionHandler, FV1State } from '../types';
+import type { InstructionHandler } from '../types';
 
-/**
- * NOP (No Operation) handler - default for unimplemented opcodes
- * 
- * Does nothing. Used as a safe default until specific opcodes are implemented.
- */
-const nopHandler: InstructionHandler = (_state: FV1State, _operands: number[]) => {
-  // No operation
-};
+// Import all instruction handlers
+import * as arithmetic from './arithmetic';
+import * as control from './control';
+import * as delay from './delay';
+import * as io from './io';
 
 /**
  * Instruction handler registry
  * 
  * Maps opcode names to their handler functions.
- * All handlers default to NOP until implemented in later phases.
  */
 export const instructionHandlers: Record<string, InstructionHandler> = {
   // Delay memory read/write
-  rda: nopHandler,
-  rmpa: nopHandler,
-  wra: nopHandler,
-  wrap: nopHandler,
+  rda: delay.rda,
+  rmpa: delay.rmpa,
+  wra: delay.wra,
+  wrap: delay.wrap,
   
   // Register operations
-  rdax: nopHandler,
-  rdfx: nopHandler,
-  ldax: nopHandler,
-  wrax: nopHandler,
-  wrhx: nopHandler,
-  wrlx: nopHandler,
+  rdax: arithmetic.rdax,
+  rdfx: arithmetic.rdfx,
+  ldax: arithmetic.ldax,
+  wrax: arithmetic.wrax,
+  wrhx: arithmetic.wrhx,
+  wrlx: arithmetic.wrlx,
   
   // Arithmetic/logic
-  maxx: nopHandler,
-  absa: nopHandler,
-  mulx: nopHandler,
-  log: nopHandler,
-  exp: nopHandler,
-  sof: nopHandler,
+  maxx: arithmetic.maxx,
+  absa: arithmetic.absa,
+  mulx: arithmetic.mulx,
+  log: arithmetic.log,
+  exp: arithmetic.exp,
+  sof: arithmetic.sof,
   
   // Bitwise
-  and: nopHandler,
-  clr: nopHandler,
-  or: nopHandler,
-  xor: nopHandler,
-  not: nopHandler,
+  and: arithmetic.and,
+  clr: arithmetic.clr,
+  or: arithmetic.or,
+  xor: arithmetic.xor,
+  not: arithmetic.not,
   
   // Control flow
-  skp: nopHandler,
-  jmp: nopHandler,
-  nop: nopHandler,
+  skp: control.skp,
+  jmp: control.jmp,
+  nop: control.nop,
   
   // LFO
-  wlds: nopHandler,
-  wldr: nopHandler,
+  wlds: io.wlds,
+  wldr: io.wldr,
   
   // Special
-  jam: nopHandler,
-  cho: nopHandler,
-  raw: nopHandler,
+  jam: io.jam,
+  cho: io.cho,
+  raw: io.raw,
 };
 
 /**
@@ -79,7 +75,7 @@ export const instructionHandlers: Record<string, InstructionHandler> = {
  * @returns Handler function for the opcode
  */
 export function getHandler(opcode: string): InstructionHandler {
-  return instructionHandlers[opcode.toLowerCase()] || nopHandler;
+  return instructionHandlers[opcode.toLowerCase()] || control.nop;
 }
 
 /**
