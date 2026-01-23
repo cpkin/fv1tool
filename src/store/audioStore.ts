@@ -2,6 +2,7 @@ import { create } from 'zustand'
 
 import type { IOMode, PotValues } from '../fv1/types'
 import type { RenderSimulationResult, RenderProgress } from '../audio/renderTypes'
+import type { CorpusRunResult } from '../fv1/validation/corpusRunner'
 
 interface AudioState {
   // Input selection
@@ -28,6 +29,10 @@ interface AudioState {
   // POT values (knobs)
   pots: PotValues
   
+  // Corpus validation
+  corpusStatus: 'idle' | 'running' | 'complete' | 'error'
+  corpusResult: CorpusRunResult | null
+  
   // Actions
   setSelectedDemo: (demo: string | null) => void
   setUploadedFile: (file: File | null) => void
@@ -42,6 +47,8 @@ interface AudioState {
   setRenderResult: (result: RenderSimulationResult | null) => void
   setPots: (pots: Partial<PotValues>) => void
   resetRenderState: () => void
+  setCorpusStatus: (status: AudioState['corpusStatus']) => void
+  setCorpusResult: (result: CorpusRunResult | null) => void
 }
 
 const DEFAULT_POTS: PotValues = {
@@ -64,6 +71,8 @@ export const useAudioStore = create<AudioState>((set) => ({
   outputBuffer: null,
   renderResult: null,
   pots: DEFAULT_POTS,
+  corpusStatus: 'idle',
+  corpusResult: null,
   
   // Actions
   setSelectedDemo: (demo) => set({ selectedDemo: demo, uploadedFile: null }),
@@ -85,4 +94,6 @@ export const useAudioStore = create<AudioState>((set) => ({
     outputBuffer: null,
     renderResult: null,
   }),
+  setCorpusStatus: (status) => set({ corpusStatus: status }),
+  setCorpusResult: (result) => set({ corpusResult: result }),
 }))
