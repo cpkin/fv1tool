@@ -14,6 +14,8 @@ SpinGPT delivers a browser-based FV-1 SpinASM validator and audio simulator thro
 
 **Goal:** Specifications and test corpus locked; development can proceed with confidence
 
+**Status:** Complete (2026-01-23)
+
 **Dependencies:** None (kickoff phase)
 
 **Requirements:**
@@ -43,6 +45,8 @@ Plans:
 ## Phase 1: Code Validation & Analysis
 
 **Goal:** Users can paste .spn code and see syntax errors, resource usage, and lint warnings instantly
+
+**Status:** Complete (2026-01-23)
 
 **Dependencies:** Phase 0 (requires SpinASM spec and test corpus)
 

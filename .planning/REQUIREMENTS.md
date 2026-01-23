@@ -146,21 +146,21 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FOUND-04 | Phase 0 | Complete |
 | FOUND-05 | Phase 0 | Complete |
 | FOUND-06 | Phase 0 | Complete |
-| EDIT-01 | Phase 1 | Pending |
-| EDIT-02 | Phase 1 | Pending |
-| EDIT-03 | Phase 1 | Pending |
-| EDIT-04 | Phase 1 | Pending |
-| EDIT-05 | Phase 1 | Pending |
-| RSRC-01 | Phase 1 | Pending |
-| RSRC-02 | Phase 1 | Pending |
-| RSRC-03 | Phase 1 | Pending |
-| LINT-01 | Phase 1 | Pending |
-| LINT-02 | Phase 1 | Pending |
-| LINT-03 | Phase 1 | Pending |
-| LINT-04 | Phase 1 | Pending |
-| LINT-05 | Phase 1 | Pending |
-| LINT-06 | Phase 1 | Pending |
-| LINT-07 | Phase 1 | Pending |
+| EDIT-01 | Phase 1 | Complete |
+| EDIT-02 | Phase 1 | Complete |
+| EDIT-03 | Phase 1 | Complete |
+| EDIT-04 | Phase 1 | Complete |
+| EDIT-05 | Phase 1 | Complete |
+| RSRC-01 | Phase 1 | Complete |
+| RSRC-02 | Phase 1 | Complete |
+| RSRC-03 | Phase 1 | Complete |
+| LINT-01 | Phase 1 | Complete |
+| LINT-02 | Phase 1 | Complete |
+| LINT-03 | Phase 1 | Complete |
+| LINT-04 | Phase 1 | Complete |
+| LINT-05 | Phase 1 | Complete |
+| LINT-06 | Phase 1 | Complete |
+| LINT-07 | Phase 1 | Complete |
 | SIM-01 | Phase 2 | Pending |
 | SIM-02 | Phase 2 | Pending |
 | SIM-03 | Phase 2 | Pending |
@@ -198,4 +198,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-22*
-*Last updated: 2026-01-22 after Phase 0 completion*
+*Last updated: 2026-01-23 after Phase 1 completion*
