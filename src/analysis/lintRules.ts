@@ -18,6 +18,7 @@ interface DiagnosticInput {
   column?: number
   suggestedFix?: string
   source: string
+  severity?: ValidationDiagnostic['severity']
 }
 
 const createDiagnostic = ({
@@ -26,8 +27,9 @@ const createDiagnostic = ({
   column,
   suggestedFix,
   source,
+  severity = 'warning',
 }: DiagnosticInput): ValidationDiagnostic => ({
-  severity: 'warning',
+  severity,
   message,
   suggestedFix,
   line,
@@ -44,8 +46,15 @@ const findEquateForRegister = (parseResult: ParseResult, registerName: string) =
   })
 }
 
-const normalizeMemoryOperand = (operand: string): string =>
-  operand.trim().toLowerCase().replace(/[\^#]$/, '')
+const normalizeMemoryOperand = (operand: string): string => {
+  const trimmed = operand.trim()
+  const identifierMatch = trimmed.match(/[A-Za-z_][A-Za-z0-9_]*/)
+  if (!identifierMatch) {
+    return trimmed.toLowerCase().replace(/[\^#]$/, '')
+  }
+
+  return identifierMatch[0].toLowerCase()
+}
 
 const parseNumericOperand = (
   operand: string,
@@ -303,10 +312,10 @@ export const runLintRules = (
     const equate = findEquateForRegister(parseResult, pot)
     diagnostics.push(
       createDiagnostic({
-        message: `LINT-01: ${pot.toUpperCase()} is never referenced.`,
+        severity: 'info',
+        message: `NOTE: ${pot.toUpperCase()} is not referenced (optional).`,
         line: equate?.line,
         column: equate?.column,
-        suggestedFix: `Use ${pot.toUpperCase()} as a modulation source or remove it.`,
         source,
       })
     )

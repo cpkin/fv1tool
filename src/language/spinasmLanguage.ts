@@ -8,7 +8,9 @@ export const spinasmLanguage = LRLanguage.define({
   parser: parser.configure({
     props: [
       styleTags({
-        Directive: tags.keyword,
+        EquDir: tags.keyword,
+        MemDir: tags.keyword,
+        OrgDir: tags.keyword,
         OpcodeName: tags.keyword,
         'LabelDef/Identifier': tags.labelName,
         Number: tags.number,

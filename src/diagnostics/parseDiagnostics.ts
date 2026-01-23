@@ -24,6 +24,37 @@ export const parseDiagnostics = (
   tree: Tree = parser.parse(source)
 ): ValidationDiagnostic[] => {
   const diagnostics: ValidationDiagnostic[] = []
+  const lines = source.split(/\r?\n/)
+
+  const stripComment = (lineText: string): string => {
+    const commentIndex = lineText.indexOf(';')
+    return commentIndex === -1 ? lineText : lineText.slice(0, commentIndex)
+  }
+
+  const looksLikeValidLine = (lineText: string): boolean => {
+    const trimmed = stripComment(lineText).trim()
+    if (!trimmed || trimmed.startsWith(';')) {
+      return true
+    }
+
+    if (/^[A-Za-z_][A-Za-z0-9_]*:\s*$/.test(trimmed)) {
+      return true
+    }
+
+    if (/^(equ|mem)\s+[A-Za-z_][A-Za-z0-9_]*\s+.+$/i.test(trimmed)) {
+      return true
+    }
+
+    if (/^org\s+.+$/i.test(trimmed)) {
+      return true
+    }
+
+    if (/^[A-Za-z_][A-Za-z0-9_]*\b(\s+[A-Za-z0-9_#^|.+\-*/\s,]+)?$/.test(trimmed)) {
+      return true
+    }
+
+    return false
+  }
 
   tree.iterate({
     enter: (node) => {
@@ -32,6 +63,13 @@ export const parseDiagnostics = (
       }
 
       const { line, column } = getLineColumn(source, node.from)
+
+      const lineText = lines[line - 1] ?? ''
+      const trimmed = stripComment(lineText).trim()
+
+      if (!trimmed || trimmed.startsWith(';') || looksLikeValidLine(lineText)) {
+        return
+      }
 
       diagnostics.push({
         severity: 'error',

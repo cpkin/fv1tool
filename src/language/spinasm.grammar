@@ -10,13 +10,17 @@ LabeledStatement { LabelDef (DirectiveStmt | InstructionStmt) }
 
 LabelDef { Identifier ":" }
 
-DirectiveStmt { Directive Expression }
+DirectiveStmt { EquStmt | MemStmt | OrgStmt }
+EquStmt { EquDir Identifier Expression }
+MemStmt { MemDir Identifier Expression }
+OrgStmt { OrgDir Expression }
 InstructionStmt { OpcodeName OperandList? }
 
 OpcodeName { Identifier }
 
 OperandList { Operand ("," Operand)* }
 Operand { Expression }
+
 
 Expression { ExprAtom (Operator ExprAtom)* }
 ExprAtom { LabelRef | Number | ParenExpr }
@@ -25,18 +29,16 @@ ParenExpr { "(" Expression ")" }
 LabelRef { Identifier Suffix? }
 Suffix { "^" | "#" }
 
-Operator { "+" | "-" | "*" | "/" }
+Operator { "+" | "-" | "*" | "/" | "|" }
 
 @tokens {
-  @precedence { Directive, Identifier }
+  @precedence { EquDir, MemDir, OrgDir, Identifier }
   space { $[ \t]+ }
   LineComment { ";" $[^\n]* }
   LineBreak { "\r\n" | "\n" }
   Number { "-"? ("0" $[xX] $[0-9a-fA-F]+ | $[0-9]+ ("." $[0-9]+)? | "." $[0-9]+) }
   Identifier { $[A-Za-z_] $[A-Za-z0-9_]* }
-  Directive {
-    $[eE] $[qQ] $[uU] |
-    $[mM] $[eE] $[mM] |
-    $[oO] $[rR] $[gG]
-  }
+  EquDir { $[eE] $[qQ] $[uU] }
+  MemDir { $[mM] $[eE] $[mM] }
+  OrgDir { $[oO] $[rR] $[gG] }
 }

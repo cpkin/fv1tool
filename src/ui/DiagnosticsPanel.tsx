@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 
 import { getLineContext } from '../diagnostics/context'
 import { useValidationStore } from '../store/validationStore'
+import CopyDiagnosticsButton from './CopyDiagnosticsButton'
 
 const DiagnosticsPanel = () => {
   const diagnostics = useValidationStore((state) => state.diagnostics)
@@ -43,10 +44,13 @@ const DiagnosticsPanel = () => {
   return (
     <div className="diagnostics-panel">
       <div className="panel-header">
-        <h2>Diagnostics</h2>
-        <span className="panel-meta">
-          {summary.errors} errors, {summary.warnings} warnings, {summary.info} info
-        </span>
+        <div>
+          <h2>Diagnostics</h2>
+          <span className="panel-meta">
+            {summary.errors} errors, {summary.warnings} warnings, {summary.info} info
+          </span>
+        </div>
+        <CopyDiagnosticsButton />
       </div>
       <div className="diagnostics-list">
         {diagnostics.length === 0 ? (

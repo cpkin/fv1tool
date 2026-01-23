@@ -2,15 +2,15 @@
 import {LRParser} from "@lezer/lr"
 export const parser = LRParser.deserialize({
   version: 14,
-  states: "%pQYQPOOOeQPO'#CnOyQPO'#CdO!UQPO'#CmO!gQPO'#C`OOQO'#C`'#C`OOQO'#C_'#C_Q!uQPO'#C_OOQO'#Cr'#CrQYQPOOOOQO,58|,58|O!zQQO'#ChOyQPO'#CkOOQO'#Cg'#CgO#lQQO'#CfOOQO,59O,59OOOQO'#Cp'#CpO$WQPO'#CoOOQO,59X,59XOOQO'#Cn'#CnOOQO,58{,58{OOQO,58y,58yOOQO-E6p-E6pOOQO'#Ci'#CiOOQO,59S,59SO$cQPO,59VOOQO'#Cl'#ClOyQPO'#CsO$hQQO,59QOyQPO'#CtO%SQPO,59ZOOQO1G.q1G.qOOQO,59_,59_OOQO-E6q-E6qOOQO,59`,59`OOQO-E6r-E6r",
-  stateData: "%b~OkOSPOS~OVPOXQOeUO~OlYOVbX^bXebXibXobX~OVZO^]Oo[O~OVZO^]Oo[OeaXiaX~OVcOXQOeSXiSX~OeeO~OmgOngOe[Xi[Xq[Xr[Xs[Xt[Xu[Xp[X~OqjOrjOsjOtjOeYXiYXuYXpYX~OumOecXicX~OpoO~OqjOrjOsjOtjOeYaiYauYapYa~OumOecaica~OXV~",
-  goto: "#fiPPPjnrvPzP!R!]!f!mP!f!pz!t!y!|P#S#Y#`TWOXTVOXTTOXTSOXSTOXRdSQ_QS`RmRi[W^QR[mRpkZ]QR[kmRhZTk^lVROSXRbRQaRRrmQXORfXQl^RqlQnaRsn",
-  nodeNames: "⚠ LineComment Program Line Statement LabeledStatement LabelDef Identifier DirectiveStmt Directive Expression ExprAtom LabelRef Suffix Number ParenExpr Operator InstructionStmt OpcodeName OperandList Operand LineBreak",
-  maxTerm: 37,
+  states: "&lQYQPOOOkQPO'#CsO!PQPO'#CeO!UQPO'#CnO!ZQPO'#CpOOQO'#Cd'#CdO!fQPO'#CrO!wQPO'#C`OOQO'#C`'#C`OOQO'#C_'#C_Q#]QPO'#C_OOQO'#Cw'#CwQYQPOOOOQO,58|,58|O!ZQPO,59PO!ZQPO,59YO#bQQO'#CiO!ZQPO'#ClOOQO'#Ch'#ChO$hQQO'#CgOOQO,59[,59[OOQO'#Cu'#CuO$xQPO'#CtOOQO,59^,59^OOQO'#Cs'#CsOOQO,58{,58{OOQO,58y,58yOOQO-E6u-E6uOOQO1G.k1G.kOOQO1G.t1G.tOOQO'#Cj'#CjOOQO,59T,59TO%TQPO,59WOOQO'#Cm'#CmO!ZQPO'#CxO%YQQO,59RO!ZQPO'#CyO%jQPO,59`OOQO1G.r1G.rOOQO,59d,59dOOQO-E6v-E6vOOQO,59e,59eOOQO-E6w-E6w",
+  stateData: "%{~OpOSPOS~OVPOYQOcROeSOjXO~Oq]OVgX_gXjgXngXtgX~OV^O~OV_O~OV`O_bOtaO~OV`O_bOtaOjfXnfX~OVhOYQOcROeSOjSXnSX~OjjO~OrnOsnOj]Xn]Xv]Xw]Xx]Xy]Xz]X{]Xu]X~OvqOwqOxqOyqOzqO~OjZXnZX{ZXuZX~P$VO{tOjhXnhX~OuvO~OjZanZa{ZauZa~P$VO{tOjhanha~OYceVe~",
+  goto: "#znPPPosw{P!P!WP!]!m!x#RP!x#U!WP!WP!P#Y#_#bP#h#n#tTZO[TYO[TWO[TVO[SWO[RiVVTOV[QdSSeUtQl^Qm_Rpa[cSU^_atRwr_bSU^_artRo`TrcsVUOV[RgUQfURytQ[ORk[QscRxsQufRzu",
+  nodeNames: "⚠ LineComment Program Line Statement LabeledStatement LabelDef Identifier DirectiveStmt EquStmt EquDir Expression ExprAtom LabelRef Suffix Number ParenExpr Operator MemStmt MemDir OrgStmt OrgDir InstructionStmt OpcodeName OperandList Operand LineBreak",
+  maxTerm: 43,
   skippedNodes: [0,1],
   repeatNodeCount: 3,
-  tokenData: "+[~RqXY#YYZ#e]^#jpq#Yst#pxy#uyz#zz{$P{|$U|}$Z}!O$`!O!P$n!P!Q&U!Q!R$|!R![%_![!]&Z!]!^&`!c!g&k!g!h&|!h!o&k!o!p(m!p!q&k!q!r)y!r!}&k#Q#R+V#R#S&k#T#X&k#X#Y&|#Y#a&k#a#b(m#b#c&k#c#d)y#d#o&k~#_Qk~XY#Ypq#Y~#jOe~~#mPYZ#e~#uOn~~#zOo~~$POp~~$UOs~~$ZOq~~$`Ou~R$eRrQ!O!P$n!Q!R$|!R![%_P$qP!Q![$tP$yP^P!Q![$tP%RS^P!O!P$n!Q![%_!z!{%j#l#m%jP%dQ^P!O!P$n!Q![%_P%mR!Q![%v!c!i%v#T#Z%vP%{R^P!Q![%v!c!i%v#T#Z%v~&ZOt~~&`Ol~~&eQP~YZ&`#Q#R&`~&pSV~!Q![&k!c!}&k#R#S&k#T#o&k~'RWV~!Q![&k!c!s&k!s!t'k!t!}&k#R#S&k#T#e&k#e#f'k#f#o&k~'pWV~!Q![&k!c!w&k!w!x(Y!x!}&k#R#S&k#T#i&k#i#j(Y#j#o&k~(aSX~V~!Q![&k!c!}&k#R#S&k#T#o&k~(rWV~!Q![&k!c!g&k!g!h)[!h!}&k#R#S&k#T#X&k#X#Y)[#Y#o&k~)aWV~!Q![&k!c!o&k!o!p(Y!p!}&k#R#S&k#T#a&k#a#b(Y#b#o&k~*OWV~!Q![&k!c!t&k!t!u*h!u!}&k#R#S&k#T#f&k#f#g*h#g#o&k~*mWV~!Q![&k!c!i&k!i!j(Y!j!}&k#R#S&k#T#Z&k#Z#[(Y#[#o&k~+[Om~",
+  tokenData: ",[~RrXY#]YZ#h]^#mpq#]st#sxy#xyz#}z{$S{|$X|}$^}!O$c!O!P$q!P!Q&X!Q!R%P!R![%b![!]&^!]!^&c!c!g&n!g!h'P!h!o&n!o!p(p!p!q&n!q!r*a!r!}&n#Q#R,Q#R#S&n#T#X&n#X#Y'P#Y#a&n#a#b(p#b#c&n#c#d*a#d#o&n#p#q,V~#bQp~XY#]pq#]~#mOj~~#pPYZ#h~#xOs~~#}Ot~~$SOu~~$XOx~~$^Ov~~$cO{~R$hRwQ!O!P$q!Q!R%P!R![%bP$tP!Q![$wP$|P_P!Q![$wP%US_P!O!P$q!Q![%b!z!{%m#l#m%mP%gQ_P!O!P$q!Q![%bP%pR!Q![%y!c!i%y#T#Z%yP&OR_P!Q![%y!c!i%y#T#Z%y~&^Oy~~&cOq~~&hQP~YZ&c#Q#R&c~&sSV~!Q![&n!c!}&n#R#S&n#T#o&n~'UWV~!Q![&n!c!s&n!s!t'n!t!}&n#R#S&n#T#e&n#e#f'n#f#o&n~'sWV~!Q![&n!c!w&n!w!x(]!x!}&n#R#S&n#T#i&n#i#j(]#j#o&n~(dSY~V~!Q![&n!c!}&n#R#S&n#T#o&n~(uWV~!Q![&n!c!g&n!g!h)_!h!}&n#R#S&n#T#X&n#X#Y)_#Y#o&n~)dWV~!Q![&n!c!o&n!o!p)|!p!}&n#R#S&n#T#a&n#a#b)|#b#o&n~*TSc~V~!Q![&n!c!}&n#R#S&n#T#o&n~*fWV~!Q![&n!c!t&n!t!u+O!u!}&n#R#S&n#T#f&n#f#g+O#g#o&n~+TWV~!Q![&n!c!i&n!i!j+m!j!}&n#R#S&n#T#Z&n#Z#[+m#[#o&n~+tSe~V~!Q![&n!c!}&n#R#S&n#T#o&n~,VOr~~,[Oz~",
   tokenizers: [0, 1],
   topRules: {"Program":[0,2]},
-  tokenPrec: 199
+  tokenPrec: 221
 })

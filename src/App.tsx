@@ -1,6 +1,5 @@
 import SpinEditor from './editor/SpinEditor'
 import { useValidationStore } from './store/validationStore'
-import CopyDiagnosticsButton from './ui/CopyDiagnosticsButton'
 import DiagnosticsPanel from './ui/DiagnosticsPanel'
 import ResourceMeters from './ui/ResourceMeters'
 
@@ -53,7 +52,6 @@ function App() {
 
         <aside className="diagnostics-shell">
           <DiagnosticsPanel />
-          <CopyDiagnosticsButton />
         </aside>
       </main>
     </div>
