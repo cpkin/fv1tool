@@ -29,6 +29,20 @@ export interface MemorySymbol {
   column: number
 }
 
+export interface MemoryAllocation {
+  name: string
+  size: string
+  line: number
+  column: number
+}
+
+export interface RegisterReference {
+  name: string
+  line: number
+  column: number
+  opcode: string
+}
+
 export interface SymbolTables {
   labels: Record<string, LabelSymbol>
   equates: Record<string, EquateSymbol>
@@ -39,4 +53,6 @@ export interface ParseResult {
   instructions: ParsedInstruction[]
   symbols: SymbolTables
   diagnostics: ValidationDiagnostic[]
+  memoryAllocations: MemoryAllocation[]
+  registerReferences: RegisterReference[]
 }

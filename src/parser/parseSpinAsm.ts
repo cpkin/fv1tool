@@ -1,8 +1,24 @@
-import type { ParseResult, ParsedInstruction, SymbolTables } from './ast'
+import type {
+  MemoryAllocation,
+  ParseResult,
+  ParsedInstruction,
+  RegisterReference,
+  SymbolTables,
+} from './ast'
 import { opcodeSet } from './opcodes'
 import { parseDiagnostics } from '../diagnostics/parseDiagnostics'
 
 const directiveSet = new Set(['equ', 'mem', 'org'])
+const registerOperandOpcodes = new Set([
+  'rdax',
+  'rdfx',
+  'ldax',
+  'wrax',
+  'wrhx',
+  'wrlx',
+  'maxx',
+  'mulx',
+])
 
 const createSymbolTables = (): SymbolTables => ({
   labels: {},
@@ -19,6 +35,8 @@ export const parseSpinAsm = (source: string): ParseResult => {
   const instructions: ParsedInstruction[] = []
   const symbols = createSymbolTables()
   const diagnostics = parseDiagnostics(source)
+  const memoryAllocations: MemoryAllocation[] = []
+  const registerReferences: RegisterReference[] = []
 
   const lines = source.split(/\r?\n/)
 
@@ -74,12 +92,14 @@ export const parseSpinAsm = (source: string): ParseResult => {
               column,
             }
           } else {
-            symbols.memory[name.toLowerCase()] = {
+            const allocation = {
               name,
               size: expression,
               line: lineNumber,
               column,
             }
+            symbols.memory[name.toLowerCase()] = allocation
+            memoryAllocations.push(allocation)
           }
         }
       }
@@ -91,19 +111,37 @@ export const parseSpinAsm = (source: string): ParseResult => {
       ? afterKeyword.split(',').map((operand) => operand.trim()).filter(Boolean)
       : []
 
-    instructions.push({
+    const instruction: ParsedInstruction = {
       opcode: normalizedKeyword,
       operands,
       line: lineNumber,
       column: keywordColumn,
       raw: trimmed,
       recognized: opcodeSet.has(normalizedKeyword),
-    })
+    }
+
+    instructions.push(instruction)
+
+    if (registerOperandOpcodes.has(normalizedKeyword) && operands.length > 0) {
+      const registerOperand = operands[0]
+      const lowerContent = content.toLowerCase()
+      const operandIndex = lowerContent.indexOf(registerOperand.toLowerCase())
+      const operandColumn = operandIndex === -1 ? keywordColumn : operandIndex + 1
+
+      registerReferences.push({
+        name: registerOperand,
+        line: lineNumber,
+        column: operandColumn,
+        opcode: normalizedKeyword,
+      })
+    }
   })
 
   return {
     instructions,
     symbols,
     diagnostics,
+    memoryAllocations,
+    registerReferences,
   }
 }
