@@ -18,16 +18,16 @@ Closing remaining FV-1 opcode gaps and validating modulation behavior.
 ## Current Position
 
 Phase: 2 of 5 (Audio Simulation Engine)
-Plan: 7 of 10 in current phase
+Plan: 8 of 10 in current phase
 Status: In progress
-Last activity: 2026-01-25 - Completed 02-07-PLAN.md
+Last activity: 2026-01-25 - Completed 02-08-PLAN.md
 
 ### Progress
 ```
 Phase 0: [████████████████████] 3/3 plans (100%)
 Phase 1: [████████████████████] 4/4 plans (100%)
-Phase 2: [██████████████░░░░░░] 7/10 plans (70%)
-Overall: [████████████████░░░░] 14/17 plans (82%)
+Phase 2: [████████████████░░░░] 8/10 plans (80%)
+Overall: [█████████████████░░░] 15/17 plans (88%)
 ```
 
 ---
@@ -35,8 +35,8 @@ Overall: [████████████████░░░░] 14/17 pl
 ## Performance Metrics
 
 ### Velocity
-- **Plans completed:** 14
-- **Requirements completed:** 32/50 (64%)
+- **Plans completed:** 15
+- **Requirements completed:** 33/50 (66%)
 - **Phases completed:** 2.0/5 (40%)
 
 ### Quality
@@ -45,7 +45,7 @@ Overall: [████████████████░░░░] 14/17 pl
 - **Test coverage:** Not yet applicable
 
 ### Efficiency
-- **Avg time per plan:** 6 min (2 + 6 + 0 + 0 + 11 + 8 + 9 + 4 + 6 + 2 + 2 + 1 + 5 + 21 = 77 min / 14 plans)
+- **Avg time per plan:** 5 min (2 + 6 + 0 + 0 + 11 + 8 + 9 + 4 + 6 + 2 + 2 + 1 + 5 + 21 + 3 = 80 min / 15 plans)
 - **Replanning rate:** 0%
 
 ---
@@ -79,6 +79,8 @@ Overall: [████████████████░░░░] 14/17 pl
 | 2026-01-23 | Analyze compiled instructions for runtime warnings | Flags LOG/EXP, heavy delay RAM usage after compilation | Avoids false positives from unexecuted code paths |
 | 2026-01-25 | Scale LFO amplitude via gain constants and delay scales | Keep LFO register values in fixed-point bounds while supporting modulation depth | LFO opcodes produce consistent modulation |
 | 2026-01-25 | Advance LFO phases once per sample | Prevent stereo passes from double-advancing modulation | LFOs stay in sync across channels |
+| 2026-01-25 | Use nextPc field for SKP/JMP control flow | Cleaner than skip counter; supports both relative and absolute jumps | SKP/JMP handlers set nextPc, interpreter honors it |
+| 2026-01-25 | Inject current PC to SKP handler as operand | SKP needs current PC for relative skip calculation | Avoids threading PC through entire handler chain |
 
 ### Active Todos
 None
@@ -90,19 +92,20 @@ None
 
 ## Session Continuity
 
-Last session: 2026-01-25T16:53:26Z
-Stopped at: Completed 02-07-PLAN.md
+Last session: 2026-01-25T17:12:17Z
+Stopped at: Completed 02-08-PLAN.md
 Resume file: None
 
 ### What Just Happened
-- Completed Plan 02-07: LFO state tracking and modulation opcodes
-- Added per-sample LFO phase updates with WLDS/WLDR/JAM/CHO handling
-- Wired LFO-aware delay modulation and special register reads
+- Completed Plan 02-08: Control flow and ADC input access
+- Implemented SKP/JMP via nextPc field for program counter control
+- Documented LDAX ADCL/ADCR input sample access (already working)
+- All three critical gaps from verification report now closed
 
 ### What's Next
-1. Execute Plan 02-08: next Phase 2 gap-closure plan
-2. Run manual LFO demo spot-check (auto-pan.spn) to confirm modulation
-3. Continue Phase 2 plans 02-09 and 02-10 before Phase 3 transition
+1. Execute Plan 02-09 and 02-10: remaining Phase 2 plans
+2. Run corpus validation to verify all gaps closed
+3. Prepare for Phase 3 transition (audio interaction)
 
 ### Context for Next Session
 - **Project:** Browser-based FV-1 SpinASM validator and audio simulator
