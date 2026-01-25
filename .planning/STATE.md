@@ -86,6 +86,10 @@ Overall: [████████████████████] 20/22 pl
 | 2026-01-25 | Singleton PlaybackManager for AudioContext | AudioContext creation expensive, causes glitches if repeated | Single context for all playback, creates new AudioBufferSourceNode on each play() |
 | 2026-01-25 | Stereo waveforms overlaid (not stacked) | Shows phase relationships at a glance | Blue (left) and orange (right) at 70% opacity for clear distinction |
 | 2026-01-25 | RequestAnimationFrame for playhead updates | Waveform redraw expensive, playhead needs 60fps smoothness | Waveform redraws only on buffer/ioMode change, cursor updates every frame |
+| 2026-01-25 | Use 16-bit PCM WAV format for export | Maximum compatibility with audio players and DAWs | Predictable file sizes, industry standard lossless format |
+| 2026-01-25 | Encode URL state as base64(encodeURIComponent(JSON)) | Cleaner URLs than query params, stays client-side | Supports all Unicode in code, no server logging of shared programs |
+| 2026-01-25 | Convert POT values from 0.0-1.0 to 0-11 for URL | Users understand 0-11 range (FV-1 convention) | URL state human-readable, matches user mental model |
+| 2026-01-25 | Load URL state without auto-render | Auto-rendering could be confusing and waste CPU | User sees loaded message, must click Render to hear audio |
 
 ### Active Todos
 None
@@ -97,21 +101,24 @@ None
 
 ## Session Continuity
 
-Last session: 2026-01-25T21:37:22Z
-Stopped at: Completed 03-01-PLAN.md
+Last session: 2026-01-25T21:37:24Z
+Stopped at: Completed 03-04-PLAN.md
 Resume file: None
 
 ### What Just Happened
-- Completed Plan 03-01: Waveform visualization and playback controls
-- Built canvas-based waveform display with stereo overlay (blue/orange channels)
-- Created PlaybackManager singleton for Web Audio playback lifecycle
-- Implemented play/pause controls with animated playhead cursor
-- Phase 3 now 25% complete (1/4 plans done)
+- Completed Plan 03-04: Export and URL sharing
+- Implemented WAV encoder with RIFF/WAVE header and float32→int16 conversion
+- Built URL state encoding with base64 JSON serialization
+- Added export buttons for WAV download and .spn source download
+- Created share button with clipboard API for URL copying
+- Integrated URL state restoration on app mount without auto-rendering
+- Phase 3 now 50% complete (2/4 plans done)
 
 ### What's Next
-1. Continue Phase 3: Plans 03-02 (loop region/scrubbing), 03-03 (analog knobs), 03-04 (export/sharing)
+1. Continue Phase 3: Plans 03-02 (loop region/scrubbing) and 03-03 (analog knobs)
 2. Build loop region selector and waveform scrubbing for playback control
 3. Add POT knobs with fast re-render for parameter tweaking
+4. Complete Phase 3 to deliver full audio interaction workflow
 
 ### Context for Next Session
 - **Project:** Browser-based FV-1 SpinASM validator and audio simulator
