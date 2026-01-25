@@ -95,10 +95,13 @@ function executeSample(
   state.nextPc = null;
 
   if (cachedInstructions) {
-    const instructionCount = cachedInstructions.length;
+      const instructionCount = cachedInstructions.length;
     for (let pc = 0; pc < instructionCount; ) {
       const cached = cachedInstructions[pc];
-      const operands = cached.opcode === 'skp'
+      const needsPc = cached.opcode === 'skp'
+        || cached.opcode === 'raw'
+        || cached.opcode.startsWith('skp_');
+      const operands = needsPc
         ? [...cached.operands, pc]
         : cached.operands;
       cached.handler(state, operands);
@@ -115,7 +118,10 @@ function executeSample(
     for (let pc = 0; pc < instructionCount; ) {
       const instruction = program.instructions[pc];
       const handler = getHandler(instruction.opcode);
-      const operands = instruction.opcode === 'skp'
+      const needsPc = instruction.opcode === 'skp'
+        || instruction.opcode === 'raw'
+        || instruction.opcode.startsWith('skp_');
+      const operands = needsPc
         ? [...instruction.operands, pc]
         : instruction.operands;
       handler(state, operands);

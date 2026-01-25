@@ -177,6 +177,32 @@ function parseSkipTarget(
   return Math.max(0, skipCount);
 }
 
+function parseRawWord(operand: string): number {
+  const trimmed = operand.trim();
+  if (!trimmed) {
+    throw new Error('RAW requires a 32-bit unsigned literal');
+  }
+
+  let value: number;
+  if (trimmed.startsWith('$')) {
+    value = parseInt(trimmed.slice(1), 16);
+  } else if (trimmed.startsWith('0x') || trimmed.startsWith('0X')) {
+    value = parseInt(trimmed.slice(2), 16);
+  } else if (trimmed.startsWith('%')) {
+    value = parseInt(trimmed.slice(1), 2);
+  } else if (/^\d+$/.test(trimmed)) {
+    value = parseInt(trimmed, 10);
+  } else {
+    throw new Error(`Invalid RAW operand: ${operand}`);
+  }
+
+  if (!Number.isFinite(value) || value < 0 || value > 0xFFFFFFFF) {
+    throw new Error(`RAW operand out of range: ${operand}`);
+  }
+
+  return value >>> 0;
+}
+
 function parseChoOperands(
   instruction: ParsedInstruction,
   mode: number,
@@ -515,10 +541,10 @@ function compileInstruction(
         break;
       }
       case 'raw':
-        // Pass operands as-is (will be parsed by handler)
-        for (const op of instruction.operands) {
-          operands.push(parseCoefficient(op));
+        if (instruction.operands.length < 1) {
+          throw new Error('RAW requires a 32-bit unsigned literal');
         }
+        operands.push(parseRawWord(instruction.operands[0]));
         break;
       
       default:

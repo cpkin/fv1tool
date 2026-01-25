@@ -191,6 +191,16 @@ export interface CompiledInstruction {
 }
 
 /**
+ * Decoded RAW instruction payload
+ *
+ * Used by RAW handler to execute decoded opcode + operands.
+ */
+export interface RawDecodedInstruction {
+  opcode: string;
+  operands: number[];
+}
+
+/**
  * FV-1 compiled program
  * 
  * A complete program ready for execution, consisting of up to 128 instructions

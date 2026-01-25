@@ -11,8 +11,10 @@
  * Reference: http://www.spinsemi.com/knowledge_base/inst_syntax.html
  */
 
-import type { InstructionHandler, FV1State } from '../types';
-import { saturatingAdd, saturatingMul, clampRDAXCoeff } from '../fixedPoint';
+import type { InstructionHandler, FV1State, RawDecodedInstruction } from '../types';
+import { saturatingAdd, saturatingMul, clampRDAXCoeff, fixedToFloat } from '../fixedPoint';
+import { warnUnsupportedRaw } from '../warnings';
+import { instructionHandlers } from './index';
 import {
   LFO_PHASE_INCREMENT_SCALE,
   LFO_SIN_GAIN_SCALE,
@@ -26,6 +28,194 @@ const CHO_MODE_RDA = 0;
 const CHO_MODE_SOF = 1;
 const CHO_MODE_RDAL = 2;
 const CHO_FLAG_COMPC = 2;
+
+const RAW_OPCODE_MASK = 0x1f;
+const RAW_FLAG_MASK = 0x1f;
+
+const RAW_TO_INTERNAL_SKP_FLAGS = [
+  { raw: 0x10, internal: 0x01 },
+  { raw: 0x08, internal: 0x10 },
+  { raw: 0x04, internal: 0x02 },
+  { raw: 0x02, internal: 0x04 },
+  { raw: 0x01, internal: 0x08 },
+];
+
+function signExtend(value: number, bits: number): number {
+  const signBit = 1 << (bits - 1);
+  const mask = (1 << bits) - 1;
+  const masked = value & mask;
+  return masked & signBit ? masked - (1 << bits) : masked;
+}
+
+function decodeFixed(value: number, bits: number, fracBits: number): number {
+  return signExtend(value, bits) / (1 << fracBits);
+}
+
+function decodeS23(value: number): number {
+  return fixedToFloat(value & 0xffffff);
+}
+
+function decodeRawInstruction(word: number): RawDecodedInstruction | null {
+  const opcodeBits = word & RAW_OPCODE_MASK;
+
+  switch (opcodeBits) {
+    case 0b00000: {
+      const address = (word >>> 5) & 0x7fff;
+      const coeff = decodeFixed((word >>> 21) & 0x7ff, 11, 9);
+      return { opcode: 'rda', operands: [address, coeff] };
+    }
+    case 0b00001: {
+      const coeff = decodeFixed((word >>> 21) & 0x7ff, 11, 9);
+      return { opcode: 'rmpa', operands: [coeff] };
+    }
+    case 0b00010: {
+      const address = (word >>> 5) & 0x7fff;
+      const coeff = decodeFixed((word >>> 21) & 0x7ff, 11, 9);
+      return { opcode: 'wra', operands: [address, coeff] };
+    }
+    case 0b00011: {
+      const address = (word >>> 5) & 0x7fff;
+      const coeff = decodeFixed((word >>> 21) & 0x7ff, 11, 9);
+      return { opcode: 'wrap', operands: [address, coeff] };
+    }
+    case 0b00100: {
+      const reg = (word >>> 5) & 0x3f;
+      const coeff = decodeFixed((word >>> 16) & 0xffff, 16, 14);
+      return { opcode: 'rdax', operands: [reg, coeff] };
+    }
+    case 0b00101: {
+      const reg = (word >>> 5) & 0x3f;
+      const coeffValue = (word >>> 16) & 0xffff;
+      const coeff = decodeFixed(coeffValue, 16, 14);
+      if (coeffValue === 0) {
+        return { opcode: 'ldax', operands: [reg] };
+      }
+      return { opcode: 'rdfx', operands: [reg, coeff] };
+    }
+    case 0b00110: {
+      const reg = (word >>> 5) & 0x3f;
+      const coeff = decodeFixed((word >>> 16) & 0xffff, 16, 14);
+      return { opcode: 'wrax', operands: [reg, coeff] };
+    }
+    case 0b00111: {
+      const reg = (word >>> 5) & 0x3f;
+      const coeff = decodeFixed((word >>> 16) & 0xffff, 16, 14);
+      return { opcode: 'wrhx', operands: [reg, coeff] };
+    }
+    case 0b01000: {
+      const reg = (word >>> 5) & 0x3f;
+      const coeff = decodeFixed((word >>> 16) & 0xffff, 16, 14);
+      return { opcode: 'wrlx', operands: [reg, coeff] };
+    }
+    case 0b01001: {
+      const reg = (word >>> 5) & 0x3f;
+      const coeffValue = (word >>> 16) & 0xffff;
+      const coeff = decodeFixed(coeffValue, 16, 14);
+      if (reg === 0 && coeffValue === 0) {
+        return { opcode: 'absa', operands: [] };
+      }
+      return { opcode: 'maxx', operands: [reg, coeff] };
+    }
+    case 0b01010: {
+      const reg = (word >>> 5) & 0x3f;
+      return { opcode: 'mulx', operands: [reg] };
+    }
+    case 0b01011: {
+      const coeff = decodeFixed((word >>> 16) & 0xffff, 16, 14);
+      const offset = decodeFixed((word >>> 5) & 0x7ff, 11, 10);
+      return { opcode: 'log', operands: [coeff, offset] };
+    }
+    case 0b01100: {
+      const coeff = decodeFixed((word >>> 16) & 0xffff, 16, 14);
+      const offset = decodeFixed((word >>> 5) & 0x7ff, 11, 10);
+      return { opcode: 'exp', operands: [coeff, offset] };
+    }
+    case 0b01101: {
+      const coeff = decodeFixed((word >>> 16) & 0xffff, 16, 14);
+      const offset = decodeFixed((word >>> 5) & 0x7ff, 11, 10);
+      return { opcode: 'sof', operands: [coeff, offset] };
+    }
+    case 0b01110: {
+      const value = decodeS23(word >>> 8);
+      if ((word >>> 8) === 0) {
+        return { opcode: 'clr', operands: [] };
+      }
+      return { opcode: 'and', operands: [value] };
+    }
+    case 0b01111: {
+      const value = decodeS23(word >>> 8);
+      return { opcode: 'or', operands: [value] };
+    }
+    case 0b10000: {
+      const valueBits = word >>> 8;
+      const value = decodeS23(valueBits);
+      if ((valueBits & 0xffffff) === 0xffffff) {
+        return { opcode: 'not', operands: [] };
+      }
+      return { opcode: 'xor', operands: [value] };
+    }
+    case 0b10001: {
+      const rawFlags = (word >>> 27) & RAW_FLAG_MASK;
+      let flags = 0;
+      for (const mapping of RAW_TO_INTERNAL_SKP_FLAGS) {
+        if (rawFlags & mapping.raw) {
+          flags |= mapping.internal;
+        }
+      }
+      const offset = (word >>> 21) & 0x3f;
+      return { opcode: 'skp', operands: [flags, offset] };
+    }
+    case 0b10010: {
+      const lfoBits = (word >>> 29) & 0x3;
+      if (lfoBits < 2) {
+        const frequency = (word >>> 20) & 0x1ff;
+        const amplitude = (word >>> 5) & 0x7fff;
+        return { opcode: 'wlds', operands: [lfoBits, frequency, amplitude] };
+      }
+      const frequency = signExtend((word >>> 13) & 0xffff, 16);
+      const amplitudeCode = (word >>> 5) & 0x3;
+      const amplitude = amplitudeCode === 0
+        ? 4096
+        : amplitudeCode === 1
+          ? 2048
+          : amplitudeCode === 2
+            ? 1024
+            : 512;
+      return { opcode: 'wldr', operands: [lfoBits & 0x1, frequency, amplitude] };
+    }
+    case 0b10011: {
+      const lfoBits = (word >>> 6) & 0x3;
+      return { opcode: 'jam', operands: [lfoBits & 0x1] };
+    }
+    case 0b10100: {
+      const modeBits = (word >>> 30) & 0x3;
+      const lfo = (word >>> 21) & 0x3;
+      const rawFlags = (word >>> 24) & 0x3f;
+      let flags = 0;
+      if (rawFlags & 0x02) {
+        flags |= 0x01;
+      }
+      if (rawFlags & 0x04) {
+        flags |= 0x02;
+      }
+      const argument = (word >>> 5) & 0xffff;
+
+      if (modeBits === 0) {
+        return { opcode: 'cho', operands: [0, lfo, flags, argument] };
+      }
+      if (modeBits === 2) {
+        const offset = decodeFixed(argument, 16, 15);
+        return { opcode: 'cho', operands: [1, lfo, flags, offset] };
+      }
+      if (modeBits === 3) {
+        return { opcode: 'cho', operands: [2, lfo, flags] };
+      }
+      return null;
+    }
+    default:
+      return null;
+  }
+}
 
 function getLfoParams(state: FV1State, lfoSelect: number): {
   normalized: number;
@@ -214,7 +404,25 @@ export const cho: InstructionHandler = (_state: FV1State, _operands: number[]) =
  * Reference: http://www.spinsemi.com/knowledge_base/inst_syntax.html#RAW
  */
 export const raw: InstructionHandler = (_state: FV1State, _operands: number[]) => {
-  // TODO: Implement RAW instruction decoding
-  // This requires parsing the raw instruction word and executing accordingly
-  // Extremely rare in practice - defer to later phase if needed
+  const state = _state;
+  const word = (_operands[0] ?? 0) >>> 0;
+  const currentPc = _operands[1] ?? 0;
+
+  const decoded = decodeRawInstruction(word);
+  if (!decoded) {
+    warnUnsupportedRaw(word, 'could not decode opcode');
+    return;
+  }
+
+  const handler = instructionHandlers[decoded.opcode];
+  if (!handler) {
+    warnUnsupportedRaw(word, `opcode ${decoded.opcode} is unsupported`);
+    return;
+  }
+
+  const operands = decoded.opcode === 'skp'
+    ? [...decoded.operands, currentPc]
+    : decoded.operands;
+
+  handler(state, operands);
 };

@@ -13,6 +13,11 @@ export interface SimulationWarning {
   opcodes?: string[]
 }
 
+export function warnUnsupportedRaw(word: number, reason: string): void {
+  const hexWord = word.toString(16).padStart(8, '0')
+  console.warn(`RAW instruction ${reason} (0x${hexWord})`)
+}
+
 /**
  * Analyze compiled instructions for potential fidelity issues
  */

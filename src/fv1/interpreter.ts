@@ -124,9 +124,12 @@ function executeSample(
   for (let pc = 0; pc < instructionCount; ) {
     const instruction = program.instructions[pc];
     const handler = getHandler(instruction.opcode);
-    
-    // For SKP instruction, inject current PC as third operand
-    const operands = instruction.opcode === 'skp' 
+
+    // For SKP/RAW instruction, inject current PC as final operand
+    const needsPc = instruction.opcode === 'skp'
+      || instruction.opcode === 'raw'
+      || instruction.opcode.startsWith('skp_');
+    const operands = needsPc
       ? [...instruction.operands, pc]
       : instruction.operands;
     
