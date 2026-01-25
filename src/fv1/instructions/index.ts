@@ -52,6 +52,15 @@ export const instructionHandlers: Record<string, InstructionHandler> = {
   
   // Control flow
   skp: control.skp,
+  skp_run: control.skp,
+  skp_zro: control.skp,
+  skp_gez: control.skp,
+  skp_neg: control.skp,
+  skp_zrc: control.skp,
+  skp_run_zro: control.skp,
+  skp_run_gez: control.skp,
+  skp_run_neg: control.skp,
+  skp_run_zrc: control.skp,
   jmp: control.jmp,
   nop: control.nop,
   
@@ -62,6 +71,9 @@ export const instructionHandlers: Record<string, InstructionHandler> = {
   // Special
   jam: io.jam,
   cho: io.cho,
+  cho_rda: io.cho,
+  cho_sof: io.cho,
+  cho_rdal: io.cho,
   raw: io.raw,
 };
 

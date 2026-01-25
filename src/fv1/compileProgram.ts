@@ -140,6 +140,75 @@ function parseChoFlags(operand: string): number {
   }, 0);
 }
 
+const SKP_ALIAS_FLAGS: Record<string, number> = {
+  skp_run: 0x01,
+  skp_zro: 0x02,
+  skp_gez: 0x04,
+  skp_neg: 0x08,
+  skp_zrc: 0x10,
+  skp_run_zro: 0x01 | 0x02,
+  skp_run_gez: 0x01 | 0x04,
+  skp_run_neg: 0x01 | 0x08,
+  skp_run_zrc: 0x01 | 0x10,
+};
+
+const CHO_MODE_ALIASES: Record<string, number> = {
+  cho_rda: 0,
+  cho_sof: 1,
+  cho_rdal: 2,
+};
+
+function parseSkipTarget(
+  target: string,
+  labelAddresses: Record<string, number>,
+  instruction: ParsedInstruction,
+): number {
+  const numMatch = target.match(/^(\d+)$/);
+  if (numMatch) {
+    return parseInt(numMatch[1], 10);
+  }
+
+  if (!(target in labelAddresses)) {
+    throw new Error(`Unresolved label: ${target}`);
+  }
+
+  const targetAddr = labelAddresses[target];
+  const skipCount = targetAddr - instruction.line - 1;
+  return Math.max(0, skipCount);
+}
+
+function parseChoOperands(
+  instruction: ParsedInstruction,
+  mode: number,
+  operandOffset: number,
+  memoryAddresses: Record<string, number>,
+): number[] {
+  const operands: number[] = [mode];
+
+  if (instruction.operands.length >= operandOffset + 1) {
+    const lfoSelect = parseLfoSelector(instruction.operands[operandOffset], 'any');
+    operands.push(lfoSelect);
+  }
+
+  if (instruction.operands.length >= operandOffset + 2) {
+    operands.push(parseChoFlags(instruction.operands[operandOffset + 1]));
+  }
+
+  if (instruction.operands.length >= operandOffset + 3) {
+    if (mode === 1) {
+      operands.push(parseCoefficient(instruction.operands[operandOffset + 2]));
+    } else if (mode !== 2) {
+      operands.push(parseAddress(instruction.operands[operandOffset + 2], memoryAddresses));
+    }
+  }
+
+  if (mode === 1 && instruction.operands.length >= operandOffset + 4) {
+    operands.push(parseCoefficient(instruction.operands[operandOffset + 3]));
+  }
+
+  return operands;
+}
+
 /**
  * Parses a coefficient operand
  * 
@@ -272,6 +341,31 @@ function compileInstruction(
 ): CompiledInstruction {
   const opcode = instruction.opcode.toLowerCase();
   const operands: number[] = [];
+
+  const skpAliasFlags = SKP_ALIAS_FLAGS[opcode];
+  if (skpAliasFlags !== undefined) {
+    operands.push(skpAliasFlags);
+    if (instruction.operands.length >= 1) {
+      operands.push(parseSkipTarget(instruction.operands[0], labelAddresses, instruction));
+    } else {
+      operands.push(0);
+    }
+
+    return {
+      opcode: 'skp',
+      operands,
+      line: instruction.line,
+    };
+  }
+
+  const choAliasMode = CHO_MODE_ALIASES[opcode];
+  if (choAliasMode !== undefined) {
+    return {
+      opcode: 'cho',
+      operands: parseChoOperands(instruction, choAliasMode, 0, memoryAddresses),
+      line: instruction.line,
+    };
+  }
   
   try {
     // Handle different operand types based on opcode
@@ -364,20 +458,7 @@ function compileInstruction(
         
         // Parse skip count or resolve label
         if (instruction.operands.length >= 2) {
-          const target = instruction.operands[1];
-          const numMatch = target.match(/^(\d+)$/);
-          if (numMatch) {
-            // Direct skip count
-            operands.push(parseInt(numMatch[1], 10));
-          } else {
-            // Label reference - compute skip count
-            if (!(target in labelAddresses)) {
-              throw new Error(`Unresolved label: ${target}`);
-            }
-            const targetAddr = labelAddresses[target];
-            const skipCount = targetAddr - instruction.line - 1;
-            operands.push(Math.max(0, skipCount));
-          }
+          operands.push(parseSkipTarget(instruction.operands[1], labelAddresses, instruction));
         }
         break;
       }
@@ -426,29 +507,13 @@ function compileInstruction(
         break;
       
       // Special/complex instructions
-      case 'cho':
+      case 'cho': {
         if (instruction.operands.length >= 1) {
           const mode = parseChoMode(instruction.operands[0]);
-          operands.push(mode);
-        }
-        if (instruction.operands.length >= 2) {
-          const lfoSelect = parseLfoSelector(instruction.operands[1], 'any');
-          operands.push(lfoSelect);
-        }
-        if (instruction.operands.length >= 3) {
-          operands.push(parseChoFlags(instruction.operands[2]));
-        }
-        if (instruction.operands.length >= 4) {
-          if (instruction.operands[0].trim().toLowerCase() === 'sof') {
-            operands.push(parseCoefficient(instruction.operands[3]));
-          } else {
-            operands.push(parseAddress(instruction.operands[3], memoryAddresses));
-          }
-        }
-        if (instruction.operands.length >= 5 && instruction.operands[0].trim().toLowerCase() === 'sof') {
-          operands.push(parseCoefficient(instruction.operands[4]));
+          operands.push(...parseChoOperands(instruction, mode, 1, memoryAddresses));
         }
         break;
+      }
       case 'raw':
         // Pass operands as-is (will be parsed by handler)
         for (const op of instruction.operands) {

@@ -44,6 +44,10 @@ export const skp: InstructionHandler = (state: FV1State, operands: number[]) => 
   // 0x10 = ZRC (skip on zero-crossing)
   
   let shouldSkip = false;
+
+  if (flags === 0) {
+    shouldSkip = true;
+  }
   
   // RUN flag - always run (never skip)
   if (flags & 0x01) {
