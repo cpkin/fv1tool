@@ -406,6 +406,7 @@ export default function SimulationPanel() {
             playheadTime={playheadTime}
           />
           <PlaybackControls />
+          <ExportButtons />
         </>
       )}
     </section>

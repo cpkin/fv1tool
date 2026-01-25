@@ -1105,3 +1105,22 @@ body {
     transform: translateY(0);
   }
 }
+
+/* URL State Message */
+.url-state-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #e8f4f2;
+  border: 1px solid #b8d9d3;
+  border-radius: 12px;
+  color: #1d4741;
+  font-size: 0.9rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.info-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
