@@ -137,40 +137,40 @@ Plans:
 
 **Goal:** Users can visualize waveforms, manipulate knobs, and export results
 
-**Status:** Not Started
+**Status:** Complete
 
 **Dependencies:** Phase 2 (requires audio rendering capability)
 
 **Requirements:**
-- VIZ-01: Display waveform (WaveSurfer.js or custom canvas)
-- VIZ-02: Enable waveform scrubbing (click to seek)
-- VIZ-03: Add loop playback toggle
-- VIZ-04: Add loop region selector (drag start/end points)
-- VIZ-05: Display stereo waveforms separately for stereo_stereo mode
-- KNOB-01: Render on-screen knobs (POT0, POT1, POT2) with analog aesthetic
-- KNOB-02: Knob UI range: 0–11 (FV-1 standard)
-- KNOB-03: Knob changes trigger audio re-render
-- KNOB-04: Fast re-render on knob change (<2 second target)
-- EXP-01: Export validated .spn source file
-- EXP-02: Encode .spn source + knob settings in shareable URL (hash or query param)
-- EXP-03: Support "share this sound" workflow via URL
+- VIZ-01: Display waveform (WaveSurfer.js or custom canvas) ✅
+- VIZ-02: Enable waveform scrubbing (click to seek) ✅
+- VIZ-03: Add loop playback toggle ✅
+- VIZ-04: Add loop region selector (drag start/end points) ✅
+- VIZ-05: Display stereo waveforms separately for stereo_stereo mode ✅
+- KNOB-01: Render on-screen knobs (POT0, POT1, POT2) with analog aesthetic ✅
+- KNOB-02: Knob UI range: 0–11 (FV-1 standard) ✅
+- KNOB-03: Knob changes trigger audio re-render ✅
+- KNOB-04: Fast re-render on knob change (<2 second target) ✅
+- EXP-01: Export validated .spn source file ✅
+- EXP-02: Encode .spn source + knob settings in shareable URL (hash or query param) ✅
+- EXP-03: Support "share this sound" workflow via URL ✅
 
 **Success Criteria:**
-1. Waveform displays rendered audio with peaks visualization and playback position indicator
-2. User can click waveform to seek, drag loop region markers, and toggle loop playback
-3. Three analog-style knobs (POT0, POT1, POT2) display with 0-11 range and respond to drag
-4. Knob changes trigger re-render in <2 seconds by reusing cached AST (not re-parsing)
-5. User can export validated .spn source file and rendered audio as WAV
-6. User can share code + knob settings via URL hash, which loads complete state when visited
-7. Stereo waveforms display as dual channels for stereo_stereo mode
+1. Waveform displays rendered audio with peaks visualization and playback position indicator ✅
+2. User can click waveform to seek, drag loop region markers, and toggle loop playback ✅
+3. Three analog-style knobs (POT0, POT1, POT2) display with 0-11 range and respond to drag ✅
+4. Knob changes trigger re-render in <2 seconds by reusing cached AST (not re-parsing) ✅
+5. User can export validated .spn source file and rendered audio as WAV ✅
+6. User can share code + knob settings via URL hash, which loads complete state when visited ✅
+7. Stereo waveforms display as dual channels for stereo_stereo mode ✅
 
 **Plans:** 4 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Waveform visualization and playback controls
-- [ ] 03-02-PLAN.md — Loop region and waveform scrubbing
-- [ ] 03-03-PLAN.md — Analog knobs with fast re-render
-- [ ] 03-04-PLAN.md — Export and URL sharing
+- [x] 03-01-PLAN.md — Waveform visualization and playback controls
+- [x] 03-02-PLAN.md — Loop region and waveform scrubbing
+- [x] 03-03-PLAN.md — Analog knobs with fast re-render
+- [x] 03-04-PLAN.md — Export and URL sharing
 
 ---
 
