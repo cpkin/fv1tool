@@ -24,17 +24,27 @@ import type { InstructionHandler, FV1State } from '../types';
 import { saturatingAdd, saturatingMul, saturate, clampRDAXCoeff, applyLogShift } from '../fixedPoint';
 import { LFO_SIN_GAIN_SCALE, LFO_RMP_GAIN_SCALE } from '../constants';
 
+/**
+ * Special register indices for ADC/DAC/LFO access
+ * These virtual registers allow instructions like LDAX to read input samples
+ */
 const SPECIAL_REGISTERS = {
-  ADCL: 32,
-  ADCR: 33,
-  DACL: 34,
-  DACR: 35,
-  SIN0: 36,
-  SIN1: 37,
-  RMP0: 38,
-  RMP1: 39,
+  ADCL: 32,  // Current left input sample (mapped from inputL based on IO mode)
+  ADCR: 33,  // Current right input sample (mapped from inputR based on IO mode)
+  DACL: 34,  // Current left output
+  DACR: 35,  // Current right output
+  SIN0: 36,  // LFO sine wave 0
+  SIN1: 37,  // LFO sine wave 1
+  RMP0: 38,  // LFO ramp wave 0
+  RMP1: 39,  // LFO ramp wave 1
 };
 
+/**
+ * Gets register value, handling both general-purpose and special registers
+ * 
+ * Special registers provide access to ADC inputs, DAC outputs, and LFO values.
+ * ADC values are updated per-sample before the instruction loop.
+ */
 function getRegisterValue(state: FV1State, regIndex: number): number {
   if (regIndex >= 0 && regIndex < state.registers.length) {
     return state.registers[regIndex];
@@ -42,9 +52,9 @@ function getRegisterValue(state: FV1State, regIndex: number): number {
 
   switch (regIndex) {
     case SPECIAL_REGISTERS.ADCL:
-      return state.adcL;
+      return state.adcL;  // Current left input sample
     case SPECIAL_REGISTERS.ADCR:
-      return state.adcR;
+      return state.adcR;  // Current right input sample
     case SPECIAL_REGISTERS.DACL:
       return state.dacL;
     case SPECIAL_REGISTERS.DACR:
@@ -129,8 +139,15 @@ export const rdfx: InstructionHandler = (state: FV1State, operands: number[]) =>
  * 
  * ACC = REGx
  * 
+ * Supports both general-purpose registers (0-31) and special registers:
+ * - ADCL (32): Current left input sample
+ * - ADCR (33): Current right input sample
+ * - DACL (34): Current left output
+ * - DACR (35): Current right output
+ * - SIN0/SIN1/RMP0/RMP1 (36-39): LFO values
+ * 
  * Operands:
- * - operands[0]: Register index (0-31)
+ * - operands[0]: Register index (0-39)
  * 
  * Reference: http://www.spinsemi.com/knowledge_base/inst_syntax.html#LDAX
  */
