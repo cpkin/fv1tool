@@ -1,12 +1,18 @@
 import { useState, useRef } from 'react'
 import { useAudioStore } from '../store/audioStore'
 import { useValidationStore } from '../store/validationStore'
+import { usePlaybackStore } from '../store/playbackStore'
 import { parseSpinAsm } from '../parser/parseSpinAsm'
 import { compileProgram } from '../fv1/compileProgram'
 import { renderSimulation } from '../audio/renderSimulation'
 import { decodeAudio } from '../audio/decodeAudio'
 import { analyzeSimulationLimitations } from '../fv1/warnings'
+import { playbackManager } from '../audio/playbackManager'
 import ProgressBar from './ProgressBar'
+import WaveformDisplay from './WaveformDisplay'
+import PlaybackControls from './PlaybackControls'
+import ExportButtons from './ExportButtons'
+import KnobPanel from './KnobPanel'
 import { demoAudioFiles } from '../demos'
 import type { IOMode } from '../fv1/types'
 import type { SimulationWarning } from '../fv1/warnings'
@@ -33,12 +39,9 @@ function validateAudioFile(file: File): string | null {
 
 export default function SimulationPanel() {
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const audioContextRef = useRef<AudioContext | null>(null)
-  const currentSourceRef = useRef<AudioBufferSourceNode | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [warnings, setWarnings] = useState<SimulationWarning[]>([])
   const [isDemoLoading, setIsDemoLoading] = useState(false)
-  const [isPlaying, setIsPlaying] = useState(false)
   
   const {
     uploadedFile,
@@ -49,6 +52,7 @@ export default function SimulationPanel() {
     renderProgress,
     renderError,
     renderResult,
+    outputBuffer,
     pots,
     selectedDemo,
     setUploadedFile,
@@ -58,10 +62,13 @@ export default function SimulationPanel() {
     setRenderProgress,
     setRenderError,
     setRenderResult,
+    setOutputBuffer,
     setAudioBuffer,
     resetRenderState,
     setSelectedDemo,
   } = useAudioStore()
+  
+  const { isPlaying, playheadTime, reset: resetPlayback } = usePlaybackStore()
   
   const source = useValidationStore((state) => state.source)
   
@@ -170,7 +177,14 @@ export default function SimulationPanel() {
       return
     }
     
+    // Stop playback if currently playing
+    if (isPlaying) {
+      playbackManager.pause()
+    }
+    
+    // Reset states
     resetRenderState()
+    resetPlayback()
     setRenderStatus('rendering')
     
     try {
@@ -216,8 +230,10 @@ export default function SimulationPanel() {
         },
       })
       
+      // Update render state and set output buffer for waveform/playback
       setRenderStatus('complete')
       setRenderResult(result)
+      setOutputBuffer(result.buffer)
       setRenderError(null)
     } catch (error) {
       setRenderStatus('error')
@@ -234,39 +250,6 @@ export default function SimulationPanel() {
   
   const hasInput = (!!uploadedFile || !!audioBuffer) && !inputError
   const canRender = hasInput && source.trim().length > 0 && renderStatus !== 'rendering'
-
-  const handlePlayRender = () => {
-    if (!renderResult?.buffer) return
-
-    if (currentSourceRef.current) {
-      currentSourceRef.current.stop()
-      currentSourceRef.current = null
-    }
-
-    if (!audioContextRef.current) {
-      audioContextRef.current = new AudioContext()
-    }
-
-    const sourceNode = audioContextRef.current.createBufferSource()
-    sourceNode.buffer = renderResult.buffer
-    sourceNode.connect(audioContextRef.current.destination)
-    sourceNode.onended = () => {
-      setIsPlaying(false)
-      currentSourceRef.current = null
-    }
-    sourceNode.start()
-
-    currentSourceRef.current = sourceNode
-    setIsPlaying(true)
-  }
-
-  const handleStopRender = () => {
-    if (currentSourceRef.current) {
-      currentSourceRef.current.stop()
-      currentSourceRef.current = null
-    }
-    setIsPlaying(false)
-  }
   
   return (
     <section className="simulation-panel">
@@ -396,7 +379,7 @@ export default function SimulationPanel() {
       )}
       
       {/* Render result */}
-      {renderStatus === 'complete' && renderResult && (
+      {renderStatus === 'complete' && renderResult && outputBuffer && (
         <div className="render-result">
           <p className="result-success">✓ Render complete</p>
           <p className="result-meta">
@@ -411,18 +394,19 @@ export default function SimulationPanel() {
               ))}
             </ul>
           )}
-          <div className="render-controls">
-            {isPlaying ? (
-              <button type="button" className="play-button" onClick={handleStopRender}>
-                ⏹ Stop Playback
-              </button>
-            ) : (
-              <button type="button" className="play-button" onClick={handlePlayRender}>
-                ▶ Listen to Render
-              </button>
-            )}
-          </div>
         </div>
+      )}
+      
+      {/* Waveform and playback controls */}
+      {renderStatus === 'complete' && outputBuffer && (
+        <>
+          <WaveformDisplay
+            audioBuffer={outputBuffer}
+            ioMode={ioMode}
+            playheadTime={playheadTime}
+          />
+          <PlaybackControls />
+        </>
       )}
     </section>
   )
