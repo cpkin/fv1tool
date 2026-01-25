@@ -79,6 +79,28 @@ export const LOG_EXP_SHIFT = 4;
 export const FV1_SAMPLE_RATE = 32000; // Using 32kHz per product requirements
 
 /**
+ * LFO phase increment scaling (cycles per sample)
+ *
+ * The FV-1 LFO frequency operand is scaled to a 16-bit phase increment.
+ * This constant converts the operand to a per-sample phase delta.
+ */
+export const LFO_PHASE_INCREMENT_SCALE = 1 / 65536;
+
+/**
+ * LFO amplitude scaling
+ *
+ * WLDS uses 12-bit amplitude, WLDR uses 15-bit amplitude.
+ */
+export const LFO_SIN_GAIN_SCALE = 1 / 2048;
+export const LFO_RMP_GAIN_SCALE = 1 / 16384;
+
+/**
+ * LFO delay modulation scaling (samples per unit amplitude)
+ */
+export const LFO_SIN_DELAY_SCALE = 1;
+export const LFO_RMP_DELAY_SCALE = 1;
+
+/**
  * Maximum delay RAM size in samples
  * Reference: FV-1 datasheet
  */

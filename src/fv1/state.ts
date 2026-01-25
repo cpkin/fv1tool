@@ -51,10 +51,20 @@ export function createState(
     lfo: {
       sin0: 0.0,
       sin1: 0.0,
-      cos0: 0.0,
-      cos1: 0.0,
       rmp0: 0.0,
       rmp1: 0.0,
+      sin0Phase: 0.0,
+      sin1Phase: 0.0,
+      rmp0Phase: 0.0,
+      rmp1Phase: 0.0,
+      sin0Rate: 0.0,
+      sin1Rate: 0.0,
+      rmp0Rate: 0.0,
+      rmp1Rate: 0.0,
+      sin0Amp: 0.0,
+      sin1Amp: 0.0,
+      rmp0Amp: 0.0,
+      rmp1Amp: 0.0,
     },
   };
 }
@@ -96,10 +106,20 @@ export function resetState(state: FV1State): void {
   // Reset LFO state
   state.lfo.sin0 = 0.0;
   state.lfo.sin1 = 0.0;
-  state.lfo.cos0 = 0.0;
-  state.lfo.cos1 = 0.0;
   state.lfo.rmp0 = 0.0;
   state.lfo.rmp1 = 0.0;
+  state.lfo.sin0Phase = 0.0;
+  state.lfo.sin1Phase = 0.0;
+  state.lfo.rmp0Phase = 0.0;
+  state.lfo.rmp1Phase = 0.0;
+  state.lfo.sin0Rate = 0.0;
+  state.lfo.sin1Rate = 0.0;
+  state.lfo.rmp0Rate = 0.0;
+  state.lfo.rmp1Rate = 0.0;
+  state.lfo.sin0Amp = 0.0;
+  state.lfo.sin1Amp = 0.0;
+  state.lfo.rmp0Amp = 0.0;
+  state.lfo.rmp1Amp = 0.0;
   
   // POT values are preserved (user control)
   // IO mode is preserved (program configuration)

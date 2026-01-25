@@ -112,12 +112,37 @@ export interface FV1State {
    * Used by CHO instruction family
    */
   lfo: {
+    /**
+     * Current normalized sine/ramp output values
+     */
     sin0: number;
     sin1: number;
-    cos0: number;
-    cos1: number;
     rmp0: number;
     rmp1: number;
+
+    /**
+     * Phase accumulators (0.0-1.0)
+     */
+    sin0Phase: number;
+    sin1Phase: number;
+    rmp0Phase: number;
+    rmp1Phase: number;
+
+    /**
+     * Per-sample phase increments
+     */
+    sin0Rate: number;
+    sin1Rate: number;
+    rmp0Rate: number;
+    rmp1Rate: number;
+
+    /**
+     * LFO amplitude settings from WLDS/WLDR
+     */
+    sin0Amp: number;
+    sin1Amp: number;
+    rmp0Amp: number;
+    rmp1Amp: number;
   };
 }
 
