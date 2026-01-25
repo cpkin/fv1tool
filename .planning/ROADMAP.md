@@ -194,6 +194,11 @@ Plans:
 4. Diagram updates when code changes and metadata is re-parsed
 5. If metadata is missing or invalid, tool displays warning but remains fully functional (validation, simulation, export all work)
 
+**Plans:** 1 plan
+
+Plans:
+- [ ] 04-01-PLAN.md — Metadata-driven signal path diagrams with Cytoscape.js and Dagre layout
+
 ---
 
 ## Progress Tracking
