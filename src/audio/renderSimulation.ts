@@ -8,6 +8,7 @@ import {
 import { getHandler } from '../fv1/instructions';
 import { createState, resetState, updatePots } from '../fv1/state';
 import type { CompiledProgram, FV1State } from '../fv1/types';
+import { mapInputToADC } from '../fv1/io';
 import {
   RenderCancelledError,
   type RenderSimulationRequest,
@@ -54,44 +55,79 @@ function prepareInputChannels(
 interface CachedInstruction {
   handler: (state: FV1State, operands: number[]) => void;
   operands: number[];
+  opcode: string;
 }
 
 function executeSample(
   state: FV1State,
   program: CompiledProgram,
+  inputL: number,
+  inputR: number,
   cachedInstructions?: CachedInstruction[],
 ): void {
   state.pacc = state.acc;
+  state.dacLWritten = false;
+  state.dacRWritten = false;
+
+  const adc = mapInputToADC(inputL, inputR, state.ioMode, state.lr);
+  state.adcL = adc.adcl;
+  state.adcR = adc.adcr;
+  state.nextPc = null;
 
   if (cachedInstructions) {
-    // Fast path: use precomputed handlers
     const instructionCount = cachedInstructions.length;
-    for (let pc = 0; pc < instructionCount; pc += 1) {
+    for (let pc = 0; pc < instructionCount; ) {
       const cached = cachedInstructions[pc];
-      cached.handler(state, cached.operands);
+      const operands = cached.opcode === 'skp'
+        ? [...cached.operands, pc]
+        : cached.operands;
+      cached.handler(state, operands);
+
+      if (state.nextPc !== null) {
+        pc = state.nextPc;
+        state.nextPc = null;
+      } else {
+        pc += 1;
+      }
     }
   } else {
-    // Slow path: resolve handlers on the fly
     const instructionCount = Math.min(program.instructions.length, INSTRUCTIONS_PER_SAMPLE);
-    for (let pc = 0; pc < instructionCount; pc += 1) {
+    for (let pc = 0; pc < instructionCount; ) {
       const instruction = program.instructions[pc];
       const handler = getHandler(instruction.opcode);
-      handler(state, instruction.operands);
+      const operands = instruction.opcode === 'skp'
+        ? [...instruction.operands, pc]
+        : instruction.operands;
+      handler(state, operands);
+
+      if (state.nextPc !== null) {
+        pc = state.nextPc;
+        state.nextPc = null;
+      } else {
+        pc += 1;
+      }
     }
   }
 
   if (state.ioMode === 'mono_mono') {
-    state.dacL = state.acc;
-    state.dacR = state.acc;
-  } else if (state.ioMode === 'mono_stereo') {
-    if (state.lr === 0) {
+    if (!state.dacLWritten) {
       state.dacL = state.acc;
-    } else {
+    }
+    if (!state.dacRWritten) {
+      state.dacR = state.acc;
+    }
+  } else if (state.ioMode === 'mono_stereo') {
+    if (state.lr === 0 && !state.dacLWritten) {
+      state.dacL = state.acc;
+    }
+    if (state.lr === 1 && !state.dacRWritten) {
       state.dacR = state.acc;
     }
   } else if (state.lr === 0) {
-    state.dacL = state.acc;
-  } else {
+    if (!state.dacLWritten) {
+      state.dacL = state.acc;
+    }
+  } else if (!state.dacRWritten) {
     state.dacR = state.acc;
   }
 }
@@ -200,6 +236,7 @@ export async function renderSimulation(
     cachedInstructions[i] = {
       handler: getHandler(instruction.opcode),
       operands: instruction.operands,
+      opcode: instruction.opcode,
     };
   }
 
@@ -246,18 +283,15 @@ export async function renderSimulation(
 
     if (program.ioMode !== 'mono_mono') {
       state.lr = 0;
-      state.acc = inL;
-      executeSample(state, program, cachedInstructions);
+      executeSample(state, program, inL, inR, cachedInstructions);
       outputL[sample] = state.dacL;
 
       state.lr = 1;
-      state.acc = inR;
-      executeSample(state, program, cachedInstructions);
+      executeSample(state, program, inL, inR, cachedInstructions);
       outputR[sample] = state.dacR;
     } else {
       state.lr = 0;
-      state.acc = inL;
-      executeSample(state, program, cachedInstructions);
+      executeSample(state, program, inL, inR, cachedInstructions);
       outputL[sample] = state.dacL;
       outputR[sample] = state.dacR;
     }
