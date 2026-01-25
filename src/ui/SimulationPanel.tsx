@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo, useEffect } from 'react'
 import { useAudioStore } from '../store/audioStore'
 import { useValidationStore } from '../store/validationStore'
 import { usePlaybackStore } from '../store/playbackStore'
@@ -13,6 +13,9 @@ import WaveformDisplay from './WaveformDisplay'
 import PlaybackControls from './PlaybackControls'
 import ExportButtons from './ExportButtons'
 import KnobPanel from './KnobPanel'
+import SignalPathDiagram from '../components/SignalPathDiagram'
+import { extractMetadata } from '../utils/metadataParser'
+import { buildCytoscapeElements } from '../utils/graphBuilder'
 import { demoAudioFiles } from '../demos'
 import type { IOMode } from '../fv1/types'
 import type { SimulationWarning } from '../fv1/warnings'
@@ -42,6 +45,7 @@ export default function SimulationPanel() {
   const [isDragging, setIsDragging] = useState(false)
   const [warnings, setWarnings] = useState<SimulationWarning[]>([])
   const [isDemoLoading, setIsDemoLoading] = useState(false)
+  const [diagramExpanded, setDiagramExpanded] = useState(false)
   
   const {
     uploadedFile,
@@ -73,6 +77,20 @@ export default function SimulationPanel() {
   const { isPlaying, playheadTime, reset: resetPlayback } = usePlaybackStore()
   
   const source = useValidationStore((state) => state.source)
+  
+  // Parse metadata and build diagram elements
+  const metadata = useMemo(() => extractMetadata(source), [source])
+  const diagramElements = useMemo(() => 
+    metadata?.graph ? buildCytoscapeElements(metadata) : [], 
+    [metadata]
+  )
+  
+  // Auto-expand diagram when valid metadata is detected
+  useEffect(() => {
+    if (metadata?.graph) {
+      setDiagramExpanded(true)
+    }
+  }, [metadata])
   
   const handleFileSelect = async (file: File) => {
     resetRenderState()
@@ -416,6 +434,44 @@ export default function SimulationPanel() {
           />
           <PlaybackControls />
           <KnobPanel />
+          
+          {/* Signal Path Diagram - only show if metadata.graph exists */}
+          {metadata?.graph && (
+            <div className="diagram-section" style={{ marginTop: '2rem' }}>
+              <button
+                className="diagram-header"
+                onClick={() => setDiagramExpanded(!diagramExpanded)}
+                type="button"
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  backgroundColor: '#f8f5f2',
+                  border: '2px solid #8b7355',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  color: '#3a2f28',
+                  marginBottom: diagramExpanded ? '1rem' : '0',
+                }}
+              >
+                <span>Signal Path Diagram</span>
+                <span style={{ fontSize: '1.2rem' }}>
+                  {diagramExpanded ? '▼' : '▶'}
+                </span>
+              </button>
+              
+              {diagramExpanded && (
+                <div className="diagram-content">
+                  <SignalPathDiagram elements={diagramElements} />
+                </div>
+              )}
+            </div>
+          )}
+          
           <ExportButtons />
         </>
       )}
