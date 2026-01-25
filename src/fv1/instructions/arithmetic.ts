@@ -25,8 +25,8 @@ import { saturatingAdd, saturatingMul, saturate, clampRDAXCoeff, applyLogShift }
 import { LFO_SIN_GAIN_SCALE, LFO_RMP_GAIN_SCALE } from '../constants';
 
 /**
- * Special register indices for ADC/DAC/LFO access
- * These virtual registers allow instructions like LDAX to read input samples
+ * Special register indices for ADC/DAC/LFO/POT access
+ * These virtual registers allow instructions like LDAX to read input samples and pot values
  */
 const SPECIAL_REGISTERS = {
   ADCL: 32,  // Current left input sample (mapped from inputL based on IO mode)
@@ -37,6 +37,9 @@ const SPECIAL_REGISTERS = {
   SIN1: 37,  // LFO sine wave 1
   RMP0: 38,  // LFO ramp wave 0
   RMP1: 39,  // LFO ramp wave 1
+  POT0: 40,  // POT0 knob value (0.0-1.0)
+  POT1: 41,  // POT1 knob value (0.0-1.0)
+  POT2: 42,  // POT2 knob value (0.0-1.0)
 };
 
 /**
@@ -67,6 +70,12 @@ function getRegisterValue(state: FV1State, regIndex: number): number {
       return state.lfo.rmp0 * state.lfo.rmp0Amp * LFO_RMP_GAIN_SCALE;
     case SPECIAL_REGISTERS.RMP1:
       return state.lfo.rmp1 * state.lfo.rmp1Amp * LFO_RMP_GAIN_SCALE;
+    case SPECIAL_REGISTERS.POT0:
+      return state.pots.pot0;  // POT values are 0.0-1.0
+    case SPECIAL_REGISTERS.POT1:
+      return state.pots.pot1;
+    case SPECIAL_REGISTERS.POT2:
+      return state.pots.pot2;
     default:
       return 0.0;
   }
