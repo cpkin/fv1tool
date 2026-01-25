@@ -1,6 +1,6 @@
 import type { CompiledInstruction, IOMode, PotValues } from '../fv1/types';
 
-export type RenderWarningCode = 'default-limit' | 'hard-cap' | 'input-truncated';
+export type RenderWarningCode = 'default-limit' | 'hard-cap' | 'input-truncated' | 'slow-render';
 
 export interface RenderWarning {
   code: RenderWarningCode;

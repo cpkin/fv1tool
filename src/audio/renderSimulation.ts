@@ -51,17 +51,33 @@ function prepareInputChannels(
   return { inputL: sliceChannel(left), inputR: sliceChannel(right) };
 }
 
+interface CachedInstruction {
+  handler: (state: FV1State, operands: number[]) => void;
+  operands: number[];
+}
+
 function executeSample(
   state: FV1State,
   program: CompiledProgram,
+  cachedInstructions?: CachedInstruction[],
 ): void {
   state.pacc = state.acc;
 
-  const instructionCount = Math.min(program.instructions.length, INSTRUCTIONS_PER_SAMPLE);
-  for (let pc = 0; pc < instructionCount; pc += 1) {
-    const instruction = program.instructions[pc];
-    const handler = getHandler(instruction.opcode);
-    handler(state, instruction.operands);
+  if (cachedInstructions) {
+    // Fast path: use precomputed handlers
+    const instructionCount = cachedInstructions.length;
+    for (let pc = 0; pc < instructionCount; pc += 1) {
+      const cached = cachedInstructions[pc];
+      cached.handler(state, cached.operands);
+    }
+  } else {
+    // Slow path: resolve handlers on the fly
+    const instructionCount = Math.min(program.instructions.length, INSTRUCTIONS_PER_SAMPLE);
+    for (let pc = 0; pc < instructionCount; pc += 1) {
+      const instruction = program.instructions[pc];
+      const handler = getHandler(instruction.opcode);
+      handler(state, instruction.operands);
+    }
   }
 
   if (state.ioMode === 'mono_mono') {
@@ -176,6 +192,17 @@ export async function renderSimulation(
   const outputChannels = request.ioMode === 'mono_mono' ? 1 : 2;
   const { inputL, inputR } = prepareInputChannels(resampled.buffer, request.ioMode, frameCount);
 
+  // Precompute instruction handlers for performance (fast path)
+  const instructionCount = Math.min(program.instructions.length, INSTRUCTIONS_PER_SAMPLE);
+  const cachedInstructions: CachedInstruction[] = new Array(instructionCount);
+  for (let i = 0; i < instructionCount; i += 1) {
+    const instruction = program.instructions[i];
+    cachedInstructions[i] = {
+      handler: getHandler(instruction.opcode),
+      operands: instruction.operands,
+    };
+  }
+
   const state = createState(request.ioMode, request.pots ?? {});
   resetState(state);
   updatePots(state, request.pots ?? {});
@@ -220,17 +247,17 @@ export async function renderSimulation(
     if (program.ioMode !== 'mono_mono') {
       state.lr = 0;
       state.acc = inL;
-      executeSample(state, program);
+      executeSample(state, program, cachedInstructions);
       outputL[sample] = state.dacL;
 
       state.lr = 1;
       state.acc = inR;
-      executeSample(state, program);
+      executeSample(state, program, cachedInstructions);
       outputR[sample] = state.dacR;
     } else {
       state.lr = 0;
       state.acc = inL;
-      executeSample(state, program);
+      executeSample(state, program, cachedInstructions);
       outputL[sample] = state.dacL;
       outputR[sample] = state.dacR;
     }
@@ -262,6 +289,15 @@ export async function renderSimulation(
 
   const renderEndTime = performance.now();
   const elapsedMs = renderEndTime - renderStartTime;
+
+  // Warn if render time exceeds 2 seconds for 30s audio (performance target)
+  const targetRenderSeconds = Math.min(renderSeconds, DEFAULT_RENDER_SECONDS);
+  if (elapsedMs > 2000 && targetRenderSeconds >= 30) {
+    warnings.push({
+      code: 'slow-render',
+      message: `Render took ${(elapsedMs / 1000).toFixed(1)}s (target: <2s for 30s audio). Complex program may impact performance.`,
+    });
+  }
 
   return {
     buffer: rendered,
