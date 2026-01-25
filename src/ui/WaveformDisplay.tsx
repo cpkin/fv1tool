@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { IOMode } from '../fv1/types'
+import { playbackManager } from '../audio/playbackManager'
+import { usePlaybackStore } from '../store/playbackStore'
 
 interface WaveformDisplayProps {
   audioBuffer: AudioBuffer | null
@@ -136,6 +138,21 @@ export default function WaveformDisplay({
     return () => window.removeEventListener('resize', handleResize)
   }, [audioBuffer])
 
+  const setPlayheadTime = usePlaybackStore((state) => state.setPlayheadTime)
+
+  // Handle waveform click-to-seek
+  const handleWaveformClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!audioBuffer || !canvasRef.current) return
+
+    const rect = canvasRef.current.getBoundingClientRect()
+    const x = event.clientX - rect.left
+    const clickRatio = x / rect.width
+    const seekTime = Math.max(0, Math.min(clickRatio * audioBuffer.duration, audioBuffer.duration))
+    
+    playbackManager.seek(seekTime)
+    setPlayheadTime(seekTime)
+  }
+
   if (!audioBuffer) {
     return (
       <div className="waveform-placeholder">
@@ -146,7 +163,12 @@ export default function WaveformDisplay({
 
   return (
     <div ref={containerRef} className="waveform-container">
-      <canvas ref={canvasRef} className="waveform-canvas" />
+      <canvas 
+        ref={canvasRef} 
+        className="waveform-canvas" 
+        onClick={handleWaveformClick}
+        style={{ cursor: 'pointer' }}
+      />
     </div>
   )
 }

@@ -83,7 +83,8 @@ class PlaybackManager {
     if (!this.buffer) return
 
     const wasPlaying = this.source !== null
-    this.pausedAt = Math.max(0, Math.min(time, this.buffer.duration))
+    const clampedTime = Math.max(0, Math.min(time, this.buffer.duration))
+    this.pausedAt = clampedTime
     
     if (wasPlaying) {
       this.play()
