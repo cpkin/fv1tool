@@ -11,9 +11,9 @@ export interface DemoAudio {
 export const demoAudioFiles: DemoAudio[] = [
   {
     id: 'guitar',
-    name: 'Guitar Pluck',
-    description: 'Decaying guitar note with harmonics (A3, 220 Hz)',
-    path: '/demos/guitar.wav',
+    name: 'Guitar Riff',
+    description: 'Electric guitar recording (real performance)',
+    path: '/demos/guitar.m4a',
     recommendedIoMode: 'mono_mono',
   },
   {
