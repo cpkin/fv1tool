@@ -1,77 +1,77 @@
 {
   "auto-pan": {
-    "peak": 0.3,
-    "rms": 0.15,
+    "peak": 0.8877,
+    "rms": 0.6193,
     "hasNaN": false,
     "hasInfinity": false,
     "channelCount": 2
   },
   "basic-delay": {
-    "peak": 0.5,
-    "rms": 0.2,
+    "peak": 0.8877,
+    "rms": 0.1752,
     "hasNaN": false,
     "hasInfinity": false,
     "channelCount": 2
   },
   "tremolo": {
-    "peak": 0.35,
-    "rms": 0.18,
+    "peak": 0.8877,
+    "rms": 0.2393,
     "hasNaN": false,
     "hasInfinity": false,
     "channelCount": 2
   },
   "simple-chorus": {
-    "peak": 0.4,
-    "rms": 0.2,
+    "peak": 0.8877,
+    "rms": 0.0099,
     "hasNaN": false,
     "hasInfinity": false,
     "channelCount": 2
   },
   "flanger": {
-    "peak": 0.4,
-    "rms": 0.2,
+    "peak": 0.8877,
+    "rms": 0.1025,
     "hasNaN": false,
     "hasInfinity": false,
     "channelCount": 2
   },
   "distortion": {
-    "peak": 0.9,
-    "rms": 0.4,
+    "peak": 0.8877,
+    "rms": 0.1752,
     "hasNaN": false,
     "hasInfinity": false,
     "channelCount": 2
   },
   "eq-simple": {
-    "peak": 0.35,
+    "peak": 0.8877,
     "rms": 0.18,
     "hasNaN": false,
     "hasInfinity": false,
     "channelCount": 2
   },
   "multitap-delay": {
-    "peak": 0.6,
-    "rms": 0.25,
+    "peak": 0.8877,
+    "rms": 0.1752,
     "hasNaN": false,
     "hasInfinity": false,
     "channelCount": 2
   },
   "pitch-shift": {
-    "peak": 0.4,
-    "rms": 0.2,
+    "peak": 0.8877,
+    "rms": 0.007,
     "hasNaN": false,
     "hasInfinity": false,
     "channelCount": 2
   },
   "ring-mod": {
-    "peak": 0.5,
-    "rms": 0.25,
+    "peak": 0.8877,
+    "rms": 0.2111,
     "hasNaN": false,
     "hasInfinity": false,
     "channelCount": 2
   },
   "stereo-reverb": {
-    "peak": 0.7,
-    "rms": 0.3,
+    "peak": 0.8877,
+    "rms": 0.2477,
     "hasNaN": false,
     "hasInfinity": false,
     "channelCount": 2
