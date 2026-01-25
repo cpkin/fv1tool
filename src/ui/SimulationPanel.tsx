@@ -7,6 +7,7 @@ import { renderSimulation } from '../audio/renderSimulation'
 import { decodeAudio } from '../audio/decodeAudio'
 import { analyzeSimulationLimitations } from '../fv1/warnings'
 import ProgressBar from './ProgressBar'
+import { demoAudioFiles } from '../demos'
 import type { IOMode } from '../fv1/types'
 import type { SimulationWarning } from '../fv1/warnings'
 
@@ -32,11 +33,16 @@ function validateAudioFile(file: File): string | null {
 
 export default function SimulationPanel() {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const audioContextRef = useRef<AudioContext | null>(null)
+  const currentSourceRef = useRef<AudioBufferSourceNode | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [warnings, setWarnings] = useState<SimulationWarning[]>([])
+  const [isDemoLoading, setIsDemoLoading] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
   
   const {
     uploadedFile,
+    audioBuffer,
     inputError,
     ioMode,
     renderStatus,
@@ -44,6 +50,7 @@ export default function SimulationPanel() {
     renderError,
     renderResult,
     pots,
+    selectedDemo,
     setUploadedFile,
     setInputError,
     setIoMode,
@@ -53,6 +60,7 @@ export default function SimulationPanel() {
     setRenderResult,
     setAudioBuffer,
     resetRenderState,
+    setSelectedDemo,
   } = useAudioStore()
   
   const source = useValidationStore((state) => state.source)
@@ -71,6 +79,7 @@ export default function SimulationPanel() {
     }
     
     setUploadedFile(file)
+    setSelectedDemo(null)
     
     // Decode audio
     try {
@@ -109,9 +118,49 @@ export default function SimulationPanel() {
       handleFileSelect(file)
     }
   }
+
+  const handleDemoChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const demoId = event.target.value
+    resetRenderState()
+    setInputError(null)
+    setUploadedFile(null)
+
+    if (!demoId) {
+      setSelectedDemo(null)
+      setAudioBuffer(null)
+      return
+    }
+
+    const demo = demoAudioFiles.find((item) => item.id === demoId)
+    if (!demo) {
+      setSelectedDemo(null)
+      setAudioBuffer(null)
+      return
+    }
+
+    setSelectedDemo(demoId)
+    setIsDemoLoading(true)
+
+    try {
+      const response = await fetch(demo.path)
+      if (!response.ok) {
+        throw new Error(`Failed to load demo: ${response.status}`)
+      }
+      const arrayBuffer = await response.arrayBuffer()
+      const buffer = await decodeAudio(arrayBuffer)
+      setAudioBuffer(buffer)
+      setInputError(null)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to load demo audio'
+      setInputError(`Demo load failed: ${message}`)
+      setAudioBuffer(null)
+    } finally {
+      setIsDemoLoading(false)
+    }
+  }
   
   const handleRender = async () => {
-    if (!uploadedFile) {
+    if (!uploadedFile && !audioBuffer) {
       setRenderError('No audio file selected')
       return
     }
@@ -150,8 +199,15 @@ export default function SimulationPanel() {
       setWarnings(programWarnings)
       
       // Render simulation
+      const inputSource = uploadedFile ?? audioBuffer
+      if (!inputSource) {
+        setRenderStatus('error')
+        setRenderError('No audio input available')
+        return
+      }
+
       const result = await renderSimulation({
-        input: uploadedFile,
+        input: inputSource,
         instructions: compiled.instructions,
         ioMode,
         pots,
@@ -176,14 +232,73 @@ export default function SimulationPanel() {
     { value: 'mono_stereo', label: 'Mono In → Stereo Out' },
   ]
   
-  const hasInput = !!uploadedFile && !inputError
+  const hasInput = (!!uploadedFile || !!audioBuffer) && !inputError
   const canRender = hasInput && source.trim().length > 0 && renderStatus !== 'rendering'
+
+  const handlePlayRender = () => {
+    if (!renderResult?.buffer) return
+
+    if (currentSourceRef.current) {
+      currentSourceRef.current.stop()
+      currentSourceRef.current = null
+    }
+
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContext()
+    }
+
+    const sourceNode = audioContextRef.current.createBufferSource()
+    sourceNode.buffer = renderResult.buffer
+    sourceNode.connect(audioContextRef.current.destination)
+    sourceNode.onended = () => {
+      setIsPlaying(false)
+      currentSourceRef.current = null
+    }
+    sourceNode.start()
+
+    currentSourceRef.current = sourceNode
+    setIsPlaying(true)
+  }
+
+  const handleStopRender = () => {
+    if (currentSourceRef.current) {
+      currentSourceRef.current.stop()
+      currentSourceRef.current = null
+    }
+    setIsPlaying(false)
+  }
   
   return (
     <section className="simulation-panel">
       <div className="panel-header">
         <h2>Audio Simulation</h2>
         <span className="panel-meta">Upload audio and render through FV-1</span>
+      </div>
+
+      <div className="demo-picker">
+        <label htmlFor="demo-select" className="control-label">
+          Demo input
+        </label>
+        <select
+          id="demo-select"
+          value={selectedDemo ?? ''}
+          onChange={handleDemoChange}
+          disabled={isDemoLoading}
+          className="demo-select"
+        >
+          <option value="">Select a demo...</option>
+          {demoAudioFiles.map((demo) => (
+            <option key={demo.id} value={demo.id}>
+              {demo.name}
+            </option>
+          ))}
+        </select>
+        {isDemoLoading && <span className="demo-loading">Loading demo...</span>}
+        {selectedDemo && (
+          <span className="demo-description">
+            {demoAudioFiles.find((demo) => demo.id === selectedDemo)?.description}
+          </span>
+        )}
       </div>
       
       {/* File upload area */}
@@ -296,7 +411,17 @@ export default function SimulationPanel() {
               ))}
             </ul>
           )}
-          {/* TODO: Add audio player controls in next plan */}
+          <div className="render-controls">
+            {isPlaying ? (
+              <button type="button" className="play-button" onClick={handleStopRender}>
+                ⏹ Stop Playback
+              </button>
+            ) : (
+              <button type="button" className="play-button" onClick={handlePlayRender}>
+                ▶ Listen to Render
+              </button>
+            )}
+          </div>
         </div>
       )}
     </section>
