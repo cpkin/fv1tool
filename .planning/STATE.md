@@ -101,7 +101,7 @@ Overall: [████████████████████] 23/23 pl
 | 2026-01-25 | Auto-expand diagram when valid metadata detected | If user added metadata, they likely want to see the diagram immediately | User can collapse if not needed, default shows their work |
 
 ### Active Todos
-None
+- 3 pending todos (UX issues from user testing)
 
 ### Blockers
 None
