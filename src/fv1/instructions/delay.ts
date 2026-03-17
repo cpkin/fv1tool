@@ -14,8 +14,14 @@
  */
 
 import type { InstructionHandler, FV1State } from '../types';
-import { saturatingAdd, saturatingMul, clampRDACoeff } from '../fixedPoint';
-import { MAX_DELAY_RAM, LFO_SIN_DELAY_SCALE, LFO_RMP_DELAY_SCALE } from '../constants';
+import {
+  saturatingAdd,
+  saturatingMul,
+  clampRDACoeff,
+  floatToFixed,
+  fixedToFloat,
+} from '../fixedPoint';
+import { MAX_DELAY_RAM } from '../constants';
 
 function resolveDelayAddress(state: FV1State, address: number): number {
   const pointerRelative = address >= MAX_DELAY_RAM;
@@ -24,15 +30,40 @@ function resolveDelayAddress(state: FV1State, address: number): number {
   return ((resolved % MAX_DELAY_RAM) + MAX_DELAY_RAM) % MAX_DELAY_RAM;
 }
 
-function readDelayInterpolated(state: FV1State, address: number): number {
-  const wrapped = resolveDelayAddress(state, address);
-  const index = Math.floor(wrapped);
-  const next = (index + 1) % MAX_DELAY_RAM;
-  const fraction = wrapped - index;
-  const current = state.delayRam[index];
-  const nextValue = state.delayRam[next];
-  return current + (nextValue - current) * fraction;
+const POWER_LOOKUP = Array.from({ length: 16 }, (_, index) => Math.pow(2, index - 8));
+
+function compressDelaySample(value: number): number {
+  const fixed = floatToFixed(value);
+  let magnitude = fixed & 0x7fffff;
+  if (magnitude === 0) return 0;
+  if (fixed < 0) {
+    magnitude = (~magnitude + 1) & 0x7fffff;
+  }
+  let exponent = -8;
+  let mask = 512;
+  while (mask < 0x800000) {
+    if (mask > magnitude) break;
+    exponent += 1;
+    mask <<= 1;
+  }
+  const mantissa = magnitude >> (exponent + 8);
+  let packed = ((exponent & 0x0f) << 9) | (mantissa & 0x1ff);
+  if (fixed < 0) {
+    packed |= 0x2000;
+  }
+  return packed;
 }
+
+function decompressDelaySample(packed: number): number {
+  let exponent = (packed >> 9) & 0x0f;
+  if ((exponent & 0x08) !== 0) {
+    exponent = (exponent & 0x07) - 8;
+  }
+  const value = Math.trunc(POWER_LOOKUP[exponent + 8] * 256 * (packed & 0x1ff));
+  const signed = (packed & 0x2000) !== 0 ? (~value + 1) : value;
+  return fixedToFloat(signed);
+}
+
 
 /**
  * RDA: Read from delay RAM, multiply, and add to ACC
@@ -49,7 +80,8 @@ export const rda: InstructionHandler = (state: FV1State, operands: number[]) => 
   const address = Math.trunc(operands[0]);
   const coeff = clampRDACoeff(operands[1]);
   const resolved = resolveDelayAddress(state, address);
-  const delayValue = state.delayRam[resolved];
+  const delayValue = decompressDelaySample(Math.trunc(state.delayRam[resolved]));
+  state.delayLR = delayValue;
   const product = saturatingMul(delayValue, coeff);
   state.acc = saturatingAdd(state.acc, product);
 };
@@ -72,14 +104,12 @@ export const rda: InstructionHandler = (state: FV1State, operands: number[]) => 
 export const rmpa: InstructionHandler = (state: FV1State, operands: number[]) => {
   const coeff = clampRDACoeff(operands[0]);
 
-  const useSineLfo = state.lfo.sin0Amp !== 0 || state.lfo.sin0Rate !== 0;
-  const normalized = useSineLfo ? state.lfo.sin0 : state.lfo.rmp0;
-  const amplitude = useSineLfo ? state.lfo.sin0Amp : state.lfo.rmp0Amp;
-  const delayScale = useSineLfo ? LFO_SIN_DELAY_SCALE : LFO_RMP_DELAY_SCALE;
-  const offset = normalized * amplitude * delayScale;
-
-  const address = state.delayWritePtr + offset;
-  const delayValue = readDelayInterpolated(state, address);
+  const addrPtr = state.registers[24] ?? 0;
+  const addrPtrInt = floatToFixed(addrPtr as number);
+  const address = (addrPtrInt >> 8) + MAX_DELAY_RAM;
+  const resolved = resolveDelayAddress(state, address);
+  const delayValue = decompressDelaySample(Math.trunc(state.delayRam[resolved]));
+  state.delayLR = delayValue;
   const product = saturatingMul(delayValue, coeff);
   state.acc = saturatingAdd(state.acc, product);
 };
@@ -100,7 +130,7 @@ export const wra: InstructionHandler = (state: FV1State, operands: number[]) => 
   const address = Math.trunc(operands[0]);
   const coeff = operands.length > 1 ? operands[1] : 0.0;
   const resolved = resolveDelayAddress(state, address);
-  state.delayRam[resolved] = state.acc;
+  state.delayRam[resolved] = compressDelaySample(state.acc);
   state.acc = saturatingMul(state.acc, coeff);
 };
 
@@ -119,20 +149,12 @@ export const wra: InstructionHandler = (state: FV1State, operands: number[]) => 
  * Reference: http://www.spinsemi.com/knowledge_base/inst_syntax.html#WRAP
  */
 export const wrap: InstructionHandler = (state: FV1State, operands: number[]) => {
-  const address = Math.trunc(operands[0]);
   const coeff = clampRDACoeff(operands[1]);
   
-  // Read from specified address
-  const resolved = resolveDelayAddress(state, address);
-  const delayValue = state.delayRam[resolved];
-  
-  // Write (ACC * coeff + delayValue) to current write pointer
+  // Write ACC to delay and use LR for allpass feedback
   const product = saturatingMul(state.acc, coeff);
-  const sum = saturatingAdd(product, delayValue);
-  state.delayRam[state.delayWritePtr] = sum;
-  
-  // Advance write pointer (circular buffer)
-  state.delayWritePtr = (state.delayWritePtr + 1) % MAX_DELAY_RAM;
+  const sum = saturatingAdd(product, state.delayLR);
+  state.delayRam[state.delayWritePtr] = compressDelaySample(state.acc);
   
   // ACC is set to the written value
   state.acc = sum;

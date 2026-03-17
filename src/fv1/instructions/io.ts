@@ -12,22 +12,28 @@
  */
 
 import type { InstructionHandler, FV1State, RawDecodedInstruction } from '../types';
-import { saturatingAdd, saturatingMul, clampRDAXCoeff, fixedToFloat } from '../fixedPoint';
+import {
+  saturatingAdd,
+  saturatingMul,
+  fixedToFloat,
+} from '../fixedPoint';
 import { warnUnsupportedRaw } from '../warnings';
 import { instructionHandlers } from './index';
 import {
-  LFO_PHASE_INCREMENT_SCALE,
-  LFO_SIN_GAIN_SCALE,
-  LFO_RMP_GAIN_SCALE,
-  LFO_SIN_DELAY_SCALE,
-  LFO_RMP_DELAY_SCALE,
   MAX_DELAY_RAM,
 } from '../constants';
+import { getRampValues, getRampXfadeValue, getSinValue, jamRampLfo, jamSinLfo } from '../lfo';
 
 const CHO_MODE_RDA = 0;
 const CHO_MODE_SOF = 1;
 const CHO_MODE_RDAL = 2;
-const CHO_FLAG_COMPC = 2;
+const CHO_FLAG_COS = 0x01;
+const CHO_FLAG_COMPC = 0x04;
+const CHO_FLAG_COMPA = 0x08;
+const CHO_FLAG_RPTR2 = 0x10;
+const CHO_FLAG_NA = 0x20;
+
+const POWER_LOOKUP = Array.from({ length: 16 }, (_, index) => Math.pow(2, index - 8));
 
 const RAW_OPCODE_MASK = 0x1f;
 const RAW_FLAG_MASK = 0x1f;
@@ -217,36 +223,6 @@ function decodeRawInstruction(word: number): RawDecodedInstruction | null {
   }
 }
 
-function getLfoParams(state: FV1State, lfoSelect: number): {
-  normalized: number;
-  amplitude: number;
-  gainScale: number;
-  delayScale: number;
-  blend: number;
-} {
-  const isRamp = lfoSelect >= 2;
-  const index = lfoSelect % 2;
-
-  const normalized = isRamp
-    ? (index === 0 ? state.lfo.rmp0 : state.lfo.rmp1)
-    : (index === 0 ? state.lfo.sin0 : state.lfo.sin1);
-  const amplitude = isRamp
-    ? (index === 0 ? state.lfo.rmp0Amp : state.lfo.rmp1Amp)
-    : (index === 0 ? state.lfo.sin0Amp : state.lfo.sin1Amp);
-
-  const gainScale = isRamp ? LFO_RMP_GAIN_SCALE : LFO_SIN_GAIN_SCALE;
-  const delayScale = isRamp ? LFO_RMP_DELAY_SCALE : LFO_SIN_DELAY_SCALE;
-  const blend = isRamp ? normalized : (normalized + 1) * 0.5;
-
-  return {
-    normalized,
-    amplitude,
-    gainScale,
-    delayScale,
-    blend,
-  };
-}
-
 function resolveDelayAddress(state: FV1State, address: number): number {
   const pointerRelative = address >= MAX_DELAY_RAM;
   const base = pointerRelative ? address - MAX_DELAY_RAM : address;
@@ -257,11 +233,23 @@ function resolveDelayAddress(state: FV1State, address: number): number {
 function readDelayInterpolated(state: FV1State, address: number): number {
   const wrapped = resolveDelayAddress(state, address);
   const index = Math.floor(wrapped);
-  const next = (index + 1) % MAX_DELAY_RAM;
   const fraction = wrapped - index;
-  const current = state.delayRam[index];
-  const nextValue = state.delayRam[next];
-  return current + (nextValue - current) * fraction;
+  const next = (index + 1) % MAX_DELAY_RAM;
+  const current = decompressDelaySample(Math.trunc(state.delayRam[index]));
+  const nextValue = decompressDelaySample(Math.trunc(state.delayRam[next]));
+  const value = current + (nextValue - current) * fraction;
+  state.delayLR = value;
+  return value;
+}
+
+function decompressDelaySample(packed: number): number {
+  let exponent = (packed >> 9) & 0x0f;
+  if ((exponent & 0x08) !== 0) {
+    exponent = (exponent & 0x07) - 8;
+  }
+  const value = Math.trunc(POWER_LOOKUP[exponent + 8] * 256 * (packed & 0x1ff));
+  const signed = (packed & 0x2000) !== 0 ? (~value + 1) : value;
+  return fixedToFloat(signed);
 }
 
 /**
@@ -284,14 +272,16 @@ export const wlds: InstructionHandler = (_state: FV1State, _operands: number[]) 
   const lfoSelect = _operands[0] ?? 0;
   const frequency = _operands[1] ?? 0;
   const amplitude = _operands[2] ?? 0;
-  const rate = Math.max(0, frequency) * LFO_PHASE_INCREMENT_SCALE;
+  const rate = (Math.max(0, frequency) & 0x1ff) << 14;
 
   if (lfoSelect === 0) {
     state.lfo.sin0Rate = rate;
-    state.lfo.sin0Amp = Math.max(0, amplitude);
+    state.lfo.sin0Amp = Math.max(0, amplitude) << 8;
+    jamSinLfo(state, 0);
   } else {
     state.lfo.sin1Rate = rate;
-    state.lfo.sin1Amp = Math.max(0, amplitude);
+    state.lfo.sin1Amp = Math.max(0, amplitude) << 8;
+    jamSinLfo(state, 1);
   }
 };
 
@@ -315,14 +305,26 @@ export const wldr: InstructionHandler = (_state: FV1State, _operands: number[]) 
   const lfoSelect = _operands[0] ?? 0;
   const frequency = _operands[1] ?? 0;
   const amplitude = _operands[2] ?? 0;
-  const rate = Math.max(0, frequency) * LFO_PHASE_INCREMENT_SCALE;
+  let regFreq = (frequency & 0x7fff) << 8;
+  if (frequency < 0) {
+    regFreq |= 0xff80_0000;
+  }
+  const ampCode = amplitude === 1024
+    ? 0x02
+    : amplitude === 2048
+      ? 0x01
+      : amplitude === 4096
+        ? 0x00
+        : 0x03;
 
   if (lfoSelect === 0) {
-    state.lfo.rmp0Rate = rate;
-    state.lfo.rmp0Amp = Math.max(0, amplitude);
+    state.lfo.rmp0Rate = regFreq;
+    state.lfo.rmp0Amp = ampCode;
+    jamRampLfo(state, 0);
   } else {
-    state.lfo.rmp1Rate = rate;
-    state.lfo.rmp1Amp = Math.max(0, amplitude);
+    state.lfo.rmp1Rate = regFreq;
+    state.lfo.rmp1Amp = ampCode;
+    jamRampLfo(state, 1);
   }
 };
 
@@ -341,11 +343,9 @@ export const jam: InstructionHandler = (state: FV1State, operands: number[]) => 
 
   // Reset ramp LFO phase to zero
   if (lfoSelect === 0) {
-    state.lfo.rmp0Phase = 0.0;
-    state.lfo.rmp0 = 0.0;
+    jamRampLfo(state, 0);
   } else {
-    state.lfo.rmp1Phase = 0.0;
-    state.lfo.rmp1 = 0.0;
+    jamRampLfo(state, 1);
   }
 };
 
@@ -372,30 +372,68 @@ export const cho: InstructionHandler = (_state: FV1State, _operands: number[]) =
   const lfoSelect = _operands[1] ?? 0;
   const flags = _operands[2] ?? 0;
 
-  const lfoParams = getLfoParams(state, lfoSelect);
-  const lfoValue = lfoParams.normalized * lfoParams.amplitude * lfoParams.gainScale;
+  const isRamp = lfoSelect >= 2;
+  const compc = (flags & CHO_FLAG_COMPC) !== 0;
+  const compa = (flags & CHO_FLAG_COMPA) !== 0;
+  const useCos = (flags & CHO_FLAG_COS) !== 0;
+  const rptr2 = (flags & CHO_FLAG_RPTR2) !== 0;
+  const na = (flags & CHO_FLAG_NA) !== 0;
 
   if (mode === CHO_MODE_SOF) {
-    const coeff = _operands.length > 3 ? clampRDAXCoeff(_operands[3]) : 1.0;
-    const offset = _operands.length > 4 ? _operands[4] : 0.0;
-    const scaled = saturatingMul(state.acc, coeff * lfoValue);
-    state.acc = saturatingAdd(scaled, offset);
+    const offset = _operands.length > 3 ? _operands[3] : 0.0;
+    if (na && isRamp) {
+      const rampIndex = (lfoSelect - 2) as 0 | 1;
+      let fadeVal = getRampXfadeValue(state, rampIndex);
+      if (compc) fadeVal = 16384 - fadeVal;
+      const coeff = fadeVal / 16384;
+      state.acc = saturatingAdd(saturatingMul(state.acc, coeff), offset);
+      return;
+    }
+
+    const lfoValue = isRamp
+      ? fixedToFloat(getRampValues(state, (lfoSelect - 2) as 0 | 1, rptr2).value)
+      : fixedToFloat(getSinValue(state, lfoSelect as 0 | 1, useCos));
+    state.acc = saturatingAdd(saturatingMul(state.acc, lfoValue), offset);
     return;
   }
 
   const baseAddress = _operands.length > 3 ? _operands[3] : 0;
-  const delayOffset = lfoParams.normalized * lfoParams.amplitude * lfoParams.delayScale * state.choDepth;
-  const delayValue = readDelayInterpolated(state, baseAddress + delayOffset);
-  const blend = Math.max(0, Math.min(1, lfoParams.blend));
-  const smoothBlend = blend * blend * (3 - 2 * blend);
-  const coeff = (flags & CHO_FLAG_COMPC) === 0 ? smoothBlend : 1 - smoothBlend;
-  const scaled = saturatingMul(delayValue, coeff);
 
-  if (mode === CHO_MODE_RDAL) {
-    state.acc = scaled;
-  } else {
-    state.acc = saturatingAdd(state.acc, scaled);
+  if (na && isRamp) {
+    const rampIndex = (lfoSelect - 2) as 0 | 1;
+    let fadeVal = getRampXfadeValue(state, rampIndex);
+    if (compc) fadeVal = 16384 - fadeVal;
+    const coeff = fadeVal / 16384;
+    const delayValue = readDelayInterpolated(state, baseAddress);
+    const scaled = saturatingMul(delayValue, coeff);
+    state.acc = mode === CHO_MODE_RDAL ? scaled : saturatingAdd(state.acc, scaled);
+    return;
   }
+
+  let lfoPos = 0;
+  let coeff = 0;
+
+  if (isRamp) {
+    const ramp = getRampValues(state, (lfoSelect - 2) as 0 | 1, rptr2);
+    lfoPos = ramp.value >> 10;
+    if (compa) {
+      lfoPos = ramp.maxPos - lfoPos;
+    }
+    const inter = ramp.value & 0x3fff;
+    coeff = compc ? (16383 - inter) / 16384 : inter / 16384;
+  } else {
+    const sinVal = getSinValue(state, lfoSelect as 0 | 1, useCos);
+    lfoPos = sinVal >> 9;
+    if (compa) {
+      lfoPos = -lfoPos;
+    }
+    const inter = sinVal & 0xff;
+    coeff = compc ? (255 - inter) / 256 : inter / 256;
+  }
+
+  const delayValue = readDelayInterpolated(state, baseAddress + lfoPos);
+  const scaled = saturatingMul(delayValue, coeff);
+  state.acc = mode === CHO_MODE_RDAL ? scaled : saturatingAdd(state.acc, scaled);
 };
 
 /**

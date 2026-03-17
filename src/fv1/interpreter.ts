@@ -7,31 +7,15 @@
  * Reference: http://www.spinsemi.com/knowledge_base/arch.html
  */
 
-import { INSTRUCTIONS_PER_SAMPLE, POT_UPDATE_BLOCK_SIZE } from './constants';
+import { INSTRUCTIONS_PER_SAMPLE, POT_UPDATE_BLOCK_SIZE, MAX_DELAY_RAM } from './constants';
 import { createState, resetState } from './state';
 import { getHandler } from './instructions';
 import { normalizeOutput, normalizeInput, mapInputToADC } from './io';
+import { quantizeToReg } from './fixedPoint';
+import { updateLfoState } from './lfo';
 import type { FV1State, CompiledProgram, PotValues } from './types';
 
-const TWO_PI = Math.PI * 2;
-
-function wrapPhase(phase: number): number {
-  return phase - Math.floor(phase);
-}
-
-function updateLfoState(state: FV1State): void {
-  const lfo = state.lfo;
-
-  lfo.sin0Phase = wrapPhase(lfo.sin0Phase + lfo.sin0Rate);
-  lfo.sin1Phase = wrapPhase(lfo.sin1Phase + lfo.sin1Rate);
-  lfo.rmp0Phase = wrapPhase(lfo.rmp0Phase + lfo.rmp0Rate);
-  lfo.rmp1Phase = wrapPhase(lfo.rmp1Phase + lfo.rmp1Rate);
-
-  lfo.sin0 = Math.sin(lfo.sin0Phase * TWO_PI);
-  lfo.sin1 = Math.sin(lfo.sin1Phase * TWO_PI);
-  lfo.rmp0 = lfo.rmp0Phase;
-  lfo.rmp1 = lfo.rmp1Phase;
-}
+// LFO state updates are delegated to fv1/lfo.ts for SpinCAD fidelity
 
 /**
  * Options for program execution
@@ -105,6 +89,7 @@ function executeSample(
 ): void {
   // Update PACC with previous sample's ACC
   state.pacc = state.acc;
+  state.acc = 0;
 
   // Clear DAC write flags for this sample
   state.dacLWritten = false;
@@ -112,8 +97,8 @@ function executeSample(
 
   // Map input samples to ADC registers based on IO mode
   const adc = mapInputToADC(inputL, inputR, state.ioMode, state.lr);
-  state.adcL = adc.adcl;
-  state.adcR = adc.adcr;
+  state.adcL = quantizeToReg(adc.adcl);
+  state.adcR = quantizeToReg(adc.adcr);
   
   // Execute up to 128 instructions
   const instructionCount = Math.min(program.instructions.length, INSTRUCTIONS_PER_SAMPLE);
@@ -261,6 +246,7 @@ export function executeProgram(
     }
     
     state.sampleCounter++;
+    state.delayWritePtr = (state.delayWritePtr - 1 + MAX_DELAY_RAM) % MAX_DELAY_RAM;
   }
   
   return {

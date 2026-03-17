@@ -74,6 +74,14 @@ function signExtend24Bit(value: number): number {
   return masked;
 }
 
+export function signExtend24(value: number): number {
+  return signExtend24Bit(value);
+}
+
+export function quantizeToReg(value: number): number {
+  return fixedToFloat(floatToFixed(value));
+}
+
 /**
  * Saturating addition in 1.23 fixed-point format
  * 
@@ -88,7 +96,7 @@ export function saturatingAdd(a: number, b: number): number {
   if (sum > FP_MAX) return FP_MAX;
   if (sum < FP_MIN) return FP_MIN;
   
-  return sum;
+  return quantizeToReg(sum);
 }
 
 /**
@@ -105,7 +113,7 @@ export function saturatingSub(a: number, b: number): number {
   if (diff > FP_MAX) return FP_MAX;
   if (diff < FP_MIN) return FP_MIN;
   
-  return diff;
+  return quantizeToReg(diff);
 }
 
 /**
@@ -122,7 +130,7 @@ export function saturatingMul(a: number, b: number): number {
   if (product > FP_MAX) return FP_MAX;
   if (product < FP_MIN) return FP_MIN;
   
-  return product;
+  return quantizeToReg(product);
 }
 
 /**
@@ -182,5 +190,5 @@ export function applyExpShift(value: number): number {
 export function saturate(value: number): number {
   if (value > FP_MAX) return FP_MAX;
   if (value < FP_MIN) return FP_MIN;
-  return value;
+  return quantizeToReg(value);
 }

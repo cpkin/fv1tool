@@ -1,15 +1,8 @@
 import { decodeAudio } from './decodeAudio';
 import { resampleAudio } from './resampleAudio';
-import {
-  FV1_SAMPLE_RATE,
-  INSTRUCTIONS_PER_SAMPLE,
-  POT_UPDATE_BLOCK_SIZE,
-  MAX_DELAY_RAM,
-} from '../fv1/constants';
-import { getHandler } from '../fv1/instructions';
-import { createState, resetState, updatePots } from '../fv1/state';
-import type { CompiledProgram, FV1State } from '../fv1/types';
-import { mapInputToADC, normalizeInput } from '../fv1/io';
+import { FV1_SAMPLE_RATE } from '../fv1/constants';
+import { FV1Core } from '../fv1/fv1Core';
+import type { CompiledProgram } from '../fv1/types';
 import {
   RenderCancelledError,
   type RenderSimulationRequest,
@@ -52,32 +45,6 @@ function prepareInputChannels(
   return { inputL: sliceChannel(left), inputR: sliceChannel(right) };
 }
 
-interface CachedInstruction {
-  handler: (state: FV1State, operands: number[]) => void;
-  operands: number[];
-  opcode: string;
-}
-
-const TWO_PI = Math.PI * 2;
-
-function wrapPhase(phase: number): number {
-  return phase - Math.floor(phase);
-}
-
-function updateLfoState(state: FV1State): void {
-  const lfo = state.lfo;
-
-  lfo.sin0Phase = wrapPhase(lfo.sin0Phase + lfo.sin0Rate);
-  lfo.sin1Phase = wrapPhase(lfo.sin1Phase + lfo.sin1Rate);
-  lfo.rmp0Phase = wrapPhase(lfo.rmp0Phase + lfo.rmp0Rate);
-  lfo.rmp1Phase = wrapPhase(lfo.rmp1Phase + lfo.rmp1Rate);
-
-  lfo.sin0 = Math.sin(lfo.sin0Phase * TWO_PI);
-  lfo.sin1 = Math.sin(lfo.sin1Phase * TWO_PI);
-  lfo.rmp0 = lfo.rmp0Phase;
-  lfo.rmp1 = lfo.rmp1Phase;
-}
-
 function computePeakRms(values: Float32Array): { peak: number; rms: number } {
   let peak = 0;
   let sumSquares = 0;
@@ -91,92 +58,12 @@ function computePeakRms(values: Float32Array): { peak: number; rms: number } {
   return { peak, rms };
 }
 
-function computeNonZeroRatio(values: Float32Array): number {
+function computeNonZeroRatio(values: ArrayLike<number>): number {
   let nonZero = 0;
   for (let i = 0; i < values.length; i += 1) {
     if (values[i] !== 0) nonZero += 1;
   }
   return values.length > 0 ? nonZero / values.length : 0;
-}
-
-function executeSample(
-  state: FV1State,
-  program: CompiledProgram,
-  inputL: number,
-  inputR: number,
-  cachedInstructions?: CachedInstruction[],
-): void {
-  state.pacc = state.acc;
-  state.dacLWritten = false;
-  state.dacRWritten = false;
-
-  const adc = mapInputToADC(inputL, inputR, state.ioMode, state.lr);
-  state.adcL = adc.adcl;
-  state.adcR = adc.adcr;
-  state.nextPc = null;
-
-  if (cachedInstructions) {
-      const instructionCount = cachedInstructions.length;
-    for (let pc = 0; pc < instructionCount; ) {
-      const cached = cachedInstructions[pc];
-      const needsPc = cached.opcode === 'skp'
-        || cached.opcode === 'raw'
-        || cached.opcode.startsWith('skp_');
-      const operands = needsPc
-        ? [...cached.operands, pc]
-        : cached.operands;
-      cached.handler(state, operands);
-
-      if (state.nextPc !== null) {
-        pc = state.nextPc;
-        state.nextPc = null;
-      } else {
-        pc += 1;
-      }
-    }
-  } else {
-    const instructionCount = Math.min(program.instructions.length, INSTRUCTIONS_PER_SAMPLE);
-    for (let pc = 0; pc < instructionCount; ) {
-      const instruction = program.instructions[pc];
-      const handler = getHandler(instruction.opcode);
-      const needsPc = instruction.opcode === 'skp'
-        || instruction.opcode === 'raw'
-        || instruction.opcode.startsWith('skp_');
-      const operands = needsPc
-        ? [...instruction.operands, pc]
-        : instruction.operands;
-      handler(state, operands);
-
-      if (state.nextPc !== null) {
-        pc = state.nextPc;
-        state.nextPc = null;
-      } else {
-        pc += 1;
-      }
-    }
-  }
-
-  if (state.ioMode === 'mono_mono') {
-    if (!state.dacLWritten) {
-      state.dacL = state.acc;
-    }
-    if (!state.dacRWritten) {
-      state.dacR = state.acc;
-    }
-  } else if (state.ioMode === 'mono_stereo') {
-    if (state.lr === 0 && !state.dacLWritten) {
-      state.dacL = state.acc;
-    }
-    if (state.lr === 1 && !state.dacRWritten) {
-      state.dacR = state.acc;
-    }
-  } else if (state.lr === 0) {
-    if (!state.dacLWritten) {
-      state.dacL = state.acc;
-    }
-  } else if (!state.dacRWritten) {
-    state.dacR = state.acc;
-  }
 }
 
 // Output normalization intentionally omitted to preserve POT-controlled dynamics.
@@ -284,21 +171,12 @@ export async function renderSimulation(
     });
   }
 
-  // Precompute instruction handlers for performance (fast path)
-  const instructionCount = Math.min(program.instructions.length, INSTRUCTIONS_PER_SAMPLE);
-  const cachedInstructions: CachedInstruction[] = new Array(instructionCount);
-  for (let i = 0; i < instructionCount; i += 1) {
-    const instruction = program.instructions[i];
-    cachedInstructions[i] = {
-      handler: getHandler(instruction.opcode),
-      operands: instruction.operands,
-      opcode: instruction.opcode,
-    };
+  // Instantiate the FV1Core simulator and load the compiled program
+  const core = new FV1Core(program.instructions, program.ioMode);
+  core.reset();
+  if (request.pots) {
+    core.setPots(request.pots.pot0 ?? 0.5, request.pots.pot1 ?? 0.5, request.pots.pot2 ?? 0.5);
   }
-
-  const state = createState(request.ioMode, request.pots ?? {}, { choDepth });
-  resetState(state);
-  updatePots(state, request.pots ?? {});
 
   const outputL = new Float32Array(frameCount);
   const outputR = new Float32Array(frameCount);
@@ -330,32 +208,16 @@ export async function renderSimulation(
       });
     }
 
-    if (sample % POT_UPDATE_BLOCK_SIZE === 0 && request.pots) {
-      updatePots(state, request.pots);
-    }
+    const inL = inputL[sample] ?? 0;
+    const inR = inputR[sample] ?? inL;
 
-    const inL = normalizeInput(inputL[sample] ?? 0, false);
-    const inR = normalizeInput(inputR[sample] ?? inL, false);
-
-    updateLfoState(state);
-
-    if (program.ioMode !== 'mono_mono') {
-      state.lr = 0;
-      executeSample(state, program, inL, inR, cachedInstructions);
-      outputL[sample] = state.dacL;
-
-      state.lr = 1;
-      executeSample(state, program, inL, inR, cachedInstructions);
-      outputR[sample] = state.dacR;
-    } else {
-      state.lr = 0;
-      executeSample(state, program, inL, inR, cachedInstructions);
-      outputL[sample] = state.dacL;
-      outputR[sample] = state.dacR;
-    }
-
-    state.sampleCounter += 1;
-    state.delayWritePtr = (state.delayWritePtr + 1) % MAX_DELAY_RAM;
+    const [outL, outR] = core.step(inL, inR,
+      request.pots?.pot0 ?? 0.5,
+      request.pots?.pot1 ?? 0.5,
+      request.pots?.pot2 ?? 0.5,
+    );
+    outputL[sample] = outL;
+    outputR[sample] = outR;
   }
 
   // Apply fixed 6dB boost to compensate for FV-1 headroom
@@ -402,9 +264,9 @@ export async function renderSimulation(
 
   if (request.onDebug) {
     const label = request.debugLabel ?? 'render';
-    const delayNonZeroRatio = computeNonZeroRatio(state.delayRam);
-    const sin0DelayOffset = state.lfo.sin0 * state.lfo.sin0Amp * state.choDepth;
-    const sin1DelayOffset = state.lfo.sin1 * state.lfo.sin1Amp * state.choDepth;
+    const delayNonZeroRatio = computeNonZeroRatio(core.getDelayRam());
+    const lfoState = core.getLfoState();
+    const regs = core.getRegisters();
     request.onDebug({
       timestamp: Date.now(),
       label,
@@ -415,15 +277,15 @@ export async function renderSimulation(
         outputPeakPreMix: Number(outputStatsPreMix.peak.toFixed(6)),
         outputRmsPreMix: Number(outputStatsPreMix.rms.toFixed(6)),
         delayNonZeroRatio: Number(delayNonZeroRatio.toFixed(6)),
-        delayWritePtr: state.delayWritePtr,
-        sin0DelayOffset: Number(sin0DelayOffset.toFixed(3)),
-        sin1DelayOffset: Number(sin1DelayOffset.toFixed(3)),
-        sin0Rate: Number(state.lfo.sin0Rate.toFixed(6)),
-        sin1Rate: Number(state.lfo.sin1Rate.toFixed(6)),
-        sin0Amp: Number(state.lfo.sin0Amp.toFixed(6)),
-        sin1Amp: Number(state.lfo.sin1Amp.toFixed(6)),
-        sin0: Number(state.lfo.sin0.toFixed(6)),
-        sin1: Number(state.lfo.sin1.toFixed(6)),
+        delayWritePtr: core.getDelayPtr(),
+        sin0DelayOffset: Number((lfoState.sin0 * regs[1] * 8192).toFixed(3)),
+        sin1DelayOffset: Number((lfoState.sin1 * regs[3] * 8192).toFixed(3)),
+        sin0Rate: Number(regs[0].toFixed(6)),
+        sin1Rate: Number(regs[2].toFixed(6)),
+        sin0Amp: Number(regs[1].toFixed(6)),
+        sin1Amp: Number(regs[3].toFixed(6)),
+        sin0: Number(lfoState.sin0.toFixed(6)),
+        sin1: Number(lfoState.sin1.toFixed(6)),
       },
     });
   }

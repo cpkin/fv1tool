@@ -41,8 +41,9 @@ export function createState(
     adcL: 0.0,
     adcR: 0.0,
     registers: new Float32Array(NUM_REGISTERS),
-    delayRam: new Float32Array(MAX_DELAY_RAM),
+    delayRam: new Int32Array(MAX_DELAY_RAM),
     delayWritePtr: 0,
+    delayLR: 0,
     pots: {
       ...DEFAULT_POTS,
       ...pots,
@@ -59,6 +60,24 @@ export function createState(
       sin1: 0.0,
       rmp0: 0.0,
       rmp1: 0.0,
+      sin0Out: 0,
+      sin1Out: 0,
+      rmp0Val: 0,
+      rmp1Val: 0,
+      rmp0Rptr2: 0,
+      rmp1Rptr2: 0,
+      rmp0Max: 0,
+      rmp1Max: 0,
+      sin0Int: 0,
+      sin1Int: 0,
+      sin0Cos: -0x7fff00,
+      sin1Cos: -0x7fff00,
+      rmp0Pos: 0,
+      rmp1Pos: 0,
+      rmp0Xfade: 0,
+      rmp1Xfade: 0,
+      rmp0XfadeVal: 0,
+      rmp1XfadeVal: 0,
       sin0Phase: 0.0,
       sin1Phase: 0.0,
       rmp0Phase: 0.0,
@@ -102,8 +121,9 @@ export function resetState(state: FV1State): void {
   state.registers.fill(0.0);
   
   // Clear delay RAM
-  state.delayRam.fill(0.0);
+  state.delayRam.fill(0);
   state.delayWritePtr = 0;
+  state.delayLR = 0;
   
   // Reset DAC outputs
   state.dacL = 0.0;
@@ -119,6 +139,24 @@ export function resetState(state: FV1State): void {
   state.lfo.sin1 = 0.0;
   state.lfo.rmp0 = 0.0;
   state.lfo.rmp1 = 0.0;
+  state.lfo.sin0Out = 0;
+  state.lfo.sin1Out = 0;
+  state.lfo.rmp0Val = 0;
+  state.lfo.rmp1Val = 0;
+  state.lfo.rmp0Rptr2 = 0;
+  state.lfo.rmp1Rptr2 = 0;
+  state.lfo.rmp0Max = 0;
+  state.lfo.rmp1Max = 0;
+  state.lfo.sin0Int = 0;
+  state.lfo.sin1Int = 0;
+  state.lfo.sin0Cos = -0x7fff00;
+  state.lfo.sin1Cos = -0x7fff00;
+  state.lfo.rmp0Pos = 0;
+  state.lfo.rmp1Pos = 0;
+  state.lfo.rmp0Xfade = 0;
+  state.lfo.rmp1Xfade = 0;
+  state.lfo.rmp0XfadeVal = 0;
+  state.lfo.rmp1XfadeVal = 0;
   state.lfo.sin0Phase = 0.0;
   state.lfo.sin1Phase = 0.0;
   state.lfo.rmp0Phase = 0.0;

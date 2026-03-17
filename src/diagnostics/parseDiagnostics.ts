@@ -49,7 +49,7 @@ export const parseDiagnostics = (
       return true
     }
 
-    if (/^[A-Za-z_][A-Za-z0-9_]*\b(\s+[A-Za-z0-9_#^|.+\-*/\s,]+)?$/.test(trimmed)) {
+    if (/^[A-Za-z_][A-Za-z0-9_]*\b(\s+[A-Za-z0-9_#^|.+\-*/\s,$%]+)?$/.test(trimmed)) {
       return true
     }
 

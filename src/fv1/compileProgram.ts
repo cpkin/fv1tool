@@ -60,7 +60,19 @@ function parseRegister(operand: string, equates: Record<string, { value: string 
   if (trimmed === 'sin1') return 37; // LFO sine 1
   if (trimmed === 'rmp0') return 38; // LFO ramp 0
   if (trimmed === 'rmp1') return 39; // LFO ramp 1
-  
+  if (trimmed === 'addr_ptr' || trimmed === 'addrptr') return 24;
+  if (trimmed === 'cos0') return 36; // COS0 shares register with SIN0 (COS flag selects)
+  if (trimmed === 'cos1') return 37; // COS1 shares register with SIN1
+  // SpinCAD LFO parameter register names
+  if (trimmed === 'sin0_rate') return 43;
+  if (trimmed === 'sin0_range') return 44;
+  if (trimmed === 'sin1_rate') return 45;
+  if (trimmed === 'sin1_range') return 46;
+  if (trimmed === 'rmp0_rate') return 47;
+  if (trimmed === 'rmp0_range') return 48;
+  if (trimmed === 'rmp1_rate') return 49;
+  if (trimmed === 'rmp1_range') return 50;
+
   // POT registers (runtime-resolved, use placeholder indices)
   if (trimmed === 'pot0') return 40; // POT0 placeholder
   if (trimmed === 'pot1') return 41; // POT1 placeholder
@@ -130,8 +142,12 @@ function parseChoFlags(operand: string): number {
 
   return normalized.split('|').reduce((flags, flag) => {
     const cleaned = flag.trim();
-    if (cleaned === 'reg') return flags | 1;
-    if (cleaned === 'compc') return flags | 2;
+    if (cleaned === 'cos') return flags | 0x01;
+    if (cleaned === 'reg') return flags | 0x02;
+    if (cleaned === 'compc') return flags | 0x04;
+    if (cleaned === 'compa') return flags | 0x08;
+    if (cleaned === 'rptr2') return flags | 0x10;
+    if (cleaned === 'na') return flags | 0x20;
     const numeric = parseInt(cleaned, 10);
     if (!Number.isNaN(numeric)) {
       return flags | numeric;
@@ -161,19 +177,20 @@ const CHO_MODE_ALIASES: Record<string, number> = {
 function parseSkipTarget(
   target: string,
   labelAddresses: Record<string, number>,
-  instruction: ParsedInstruction,
+  currentInstructionIndex: number,
 ): number {
   const numMatch = target.match(/^(\d+)$/);
   if (numMatch) {
     return parseInt(numMatch[1], 10);
   }
 
-  if (!(target in labelAddresses)) {
+  const targetLower = target.toLowerCase();
+  if (!(targetLower in labelAddresses)) {
     throw new Error(`Unresolved label: ${target}`);
   }
 
-  const targetAddr = labelAddresses[target];
-  const skipCount = targetAddr - instruction.line - 1;
+  const targetAddr = labelAddresses[targetLower];
+  const skipCount = targetAddr - currentInstructionIndex - 1;
   return Math.max(0, skipCount);
 }
 
@@ -391,6 +408,7 @@ function parseDelayWriteAddress(operand: string, symbols: Record<string, number>
  */
 function compileInstruction(
   instruction: ParsedInstruction,
+  instructionIndex: number,
   labelAddresses: Record<string, number>,
   memoryAddresses: Record<string, number>,
   equates: Record<string, { value: string }>,
@@ -402,7 +420,7 @@ function compileInstruction(
   if (skpAliasFlags !== undefined) {
     operands.push(skpAliasFlags);
     if (instruction.operands.length >= 1) {
-      operands.push(parseSkipTarget(instruction.operands[0], labelAddresses, instruction));
+      operands.push(parseSkipTarget(instruction.operands[0], labelAddresses, instructionIndex));
     } else {
       operands.push(0);
     }
@@ -514,7 +532,7 @@ function compileInstruction(
         
         // Parse skip count or resolve label
         if (instruction.operands.length >= 2) {
-          operands.push(parseSkipTarget(instruction.operands[1], labelAddresses, instruction));
+          operands.push(parseSkipTarget(instruction.operands[1], labelAddresses, instructionIndex));
         }
         break;
       }
@@ -522,9 +540,9 @@ function compileInstruction(
       // Jump: label
       case 'jmp': {
         if (instruction.operands.length >= 1) {
-          const target = instruction.operands[0];
+          const target = instruction.operands[0].toLowerCase();
           if (!(target in labelAddresses)) {
-            throw new Error(`Unresolved label: ${target}`);
+            throw new Error(`Unresolved label: ${instruction.operands[0]}`);
           }
           operands.push(labelAddresses[target]);
         }
@@ -614,10 +632,34 @@ export function compileProgram(
   parseResult: ParseResult,
   ioMode: IOMode = 'stereo_stereo',
 ): CompiledProgram {
-  // Build label address map (labels point to instruction addresses)
-  const labelAddresses: Record<string, number> = {};
+  // Build label address map: label name → instruction index
+  // Labels store source line numbers from the parser, so we need to convert
+  // them to instruction indices by counting how many instructions precede each label.
+  const labelLineNumbers: Record<string, number> = {};
   for (const [name, symbol] of Object.entries(parseResult.symbols.labels)) {
-    labelAddresses[name] = symbol.line;
+    labelLineNumbers[name] = symbol.line;
+  }
+
+  // Build a map from source line number → instruction index
+  const lineToInstructionIndex: Record<number, number> = {};
+  let instrIdx = 0;
+  for (const instr of parseResult.instructions) {
+    lineToInstructionIndex[instr.line] = instrIdx;
+    instrIdx++;
+  }
+
+  // For labels, find the first instruction at or after the label's source line
+  const labelAddresses: Record<string, number> = {};
+  for (const [name, labelLine] of Object.entries(labelLineNumbers)) {
+    // Find the first instruction whose source line >= label line
+    let foundIdx = parseResult.instructions.length; // default: past end
+    for (let i = 0; i < parseResult.instructions.length; i++) {
+      if (parseResult.instructions[i].line >= labelLine) {
+        foundIdx = i;
+        break;
+      }
+    }
+    labelAddresses[name] = foundIdx;
   }
   
   // Build memory address map (memory symbols point to delay RAM addresses)
@@ -640,7 +682,8 @@ export function compileProgram(
   
   // Compile each instruction
   const compiledInstructions: CompiledInstruction[] = [];
-  for (const instruction of parseResult.instructions) {
+  for (let i = 0; i < parseResult.instructions.length; i++) {
+    const instruction = parseResult.instructions[i];
     if (!instruction.recognized) {
       throw new CompilationError(
         `Unrecognized instruction: ${instruction.opcode}`,
@@ -648,9 +691,10 @@ export function compileProgram(
         instruction.column,
       );
     }
-    
+
     const compiled = compileInstruction(
       instruction,
+      i,
       labelAddresses,
       memoryAddresses,
       equates,

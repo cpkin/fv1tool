@@ -80,13 +80,18 @@ export interface FV1State {
    * For precision filters, use registers instead of delay memory.
    * Reference: http://spinsemi.com/knowledge_base/pgm_quick.html
    */
-  delayRam: Float32Array;
+  delayRam: Int32Array;
   
   /**
    * Current delay RAM write pointer
    * Used by WRAP instruction to manage circular buffer
    */
   delayWritePtr: number;
+
+  /**
+   * Last delay RAM read value (LR register)
+   */
+  delayLR: number;
   
   /**
    * POT (potentiometer) values
@@ -137,6 +142,32 @@ export interface FV1State {
     sin1: number;
     rmp0: number;
     rmp1: number;
+
+    /**
+     * Integer LFO output values
+     */
+    sin0Out: number;
+    sin1Out: number;
+    rmp0Val: number;
+    rmp1Val: number;
+    rmp0Rptr2: number;
+    rmp1Rptr2: number;
+    rmp0Max: number;
+    rmp1Max: number;
+
+    /**
+     * Internal LFO accumulator values
+     */
+    sin0Int: number;
+    sin1Int: number;
+    sin0Cos: number;
+    sin1Cos: number;
+    rmp0Pos: number;
+    rmp1Pos: number;
+    rmp0Xfade: number;
+    rmp1Xfade: number;
+    rmp0XfadeVal: number;
+    rmp1XfadeVal: number;
 
     /**
      * Phase accumulators (0.0-1.0)

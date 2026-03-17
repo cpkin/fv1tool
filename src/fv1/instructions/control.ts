@@ -49,9 +49,9 @@ export const skp: InstructionHandler = (state: FV1State, operands: number[]) => 
     shouldSkip = true;
   }
   
-  // RUN flag - always run (never skip)
+  // RUN flag - skip after first sample
   if (flags & 0x01) {
-    shouldSkip = false;
+    shouldSkip = shouldSkip || state.sampleCounter > 0;
   }
   
   // ZRO flag - skip if ACC == 0

@@ -21,8 +21,17 @@
  */
 
 import type { InstructionHandler, FV1State } from '../types';
-import { saturatingAdd, saturatingMul, saturate, clampRDAXCoeff, applyLogShift } from '../fixedPoint';
-import { LFO_SIN_GAIN_SCALE, LFO_RMP_GAIN_SCALE } from '../constants';
+import {
+  saturatingAdd,
+  saturatingMul,
+  saturate,
+  clampRDAXCoeff,
+  applyLogShift,
+  floatToFixed,
+  fixedToFloat,
+  signExtend24,
+  quantizeToReg,
+} from '../fixedPoint';
 
 /**
  * Special register indices for ADC/DAC/LFO/POT access
@@ -41,6 +50,16 @@ const SPECIAL_REGISTERS = {
   POT1: 41,  // POT1 knob value (0.0-1.0)
   POT2: 42,  // POT2 knob value (0.0-1.0)
 };
+
+function resolveMask(mask: number): number {
+  if (Number.isInteger(mask) && Math.abs(mask) > 2) {
+    return Math.trunc(mask);
+  }
+  if (Math.abs(mask) > 2) {
+    return Math.trunc(mask);
+  }
+  return floatToFixed(mask);
+}
 
 /**
  * Gets register value, handling both general-purpose and special registers
@@ -63,13 +82,13 @@ function getRegisterValue(state: FV1State, regIndex: number): number {
     case SPECIAL_REGISTERS.DACR:
       return state.dacR;
     case SPECIAL_REGISTERS.SIN0:
-      return state.lfo.sin0 * state.lfo.sin0Amp * LFO_SIN_GAIN_SCALE;
+      return fixedToFloat(state.lfo.sin0Out);
     case SPECIAL_REGISTERS.SIN1:
-      return state.lfo.sin1 * state.lfo.sin1Amp * LFO_SIN_GAIN_SCALE;
+      return fixedToFloat(state.lfo.sin1Out);
     case SPECIAL_REGISTERS.RMP0:
-      return state.lfo.rmp0 * state.lfo.rmp0Amp * LFO_RMP_GAIN_SCALE;
+      return fixedToFloat(state.lfo.rmp0Val);
     case SPECIAL_REGISTERS.RMP1:
-      return state.lfo.rmp1 * state.lfo.rmp1Amp * LFO_RMP_GAIN_SCALE;
+      return fixedToFloat(state.lfo.rmp1Val);
     case SPECIAL_REGISTERS.POT0:
       return state.pots.pot0;  // POT values are 0.0-1.0
     case SPECIAL_REGISTERS.POT1:
@@ -83,17 +102,17 @@ function getRegisterValue(state: FV1State, regIndex: number): number {
 
 function setRegisterValue(state: FV1State, regIndex: number, value: number): void {
   if (regIndex >= 0 && regIndex < state.registers.length) {
-    state.registers[regIndex] = value;
+    state.registers[regIndex] = quantizeToReg(value);
     return;
   }
 
   switch (regIndex) {
     case SPECIAL_REGISTERS.DACL:
-      state.dacL = value;
+      state.dacL = quantizeToReg(value);
       state.dacLWritten = true;
       break;
     case SPECIAL_REGISTERS.DACR:
-      state.dacR = value;
+      state.dacR = quantizeToReg(value);
       state.dacRWritten = true;
       break;
     default:
@@ -249,7 +268,7 @@ export const maxx: InstructionHandler = (state: FV1State, operands: number[]) =>
   const coeff = clampRDAXCoeff(operands[1]);
   
   const regValue = saturatingMul(getRegisterValue(state, regIndex), coeff);
-  state.acc = Math.max(state.acc, regValue);
+  state.acc = quantizeToReg(Math.max(state.acc, regValue));
 };
 
 /**
@@ -260,7 +279,7 @@ export const maxx: InstructionHandler = (state: FV1State, operands: number[]) =>
  * Reference: http://www.spinsemi.com/knowledge_base/inst_syntax.html#ABSA
  */
 export const absa: InstructionHandler = (state: FV1State, _operands: number[]) => {
-  state.acc = Math.abs(state.acc);
+  state.acc = quantizeToReg(Math.abs(state.acc));
 };
 
 /**
@@ -309,19 +328,9 @@ export const sof: InstructionHandler = (state: FV1State, operands: number[]) => 
 export const log: InstructionHandler = (state: FV1State, operands: number[]) => {
   const coeff = clampRDAXCoeff(operands[0]);
   const offset = operands[1];
-  
   const absValue = Math.abs(state.acc);
-  
-  // Avoid log(0) - clamp to small value
-  const safeValue = Math.max(absValue, 1e-10);
-  
-  // Compute log2 and apply LOG shift (right-shift by 4 bits)
-  const logValue = Math.log2(safeValue);
-  const shifted = applyLogShift(logValue);
-  
-  // Scale and offset
-  const scaled = saturatingMul(shifted, coeff);
-  state.acc = saturatingAdd(scaled, offset);
+  const logValue = absValue === 0 ? 1.0 : applyLogShift(Math.log2(absValue));
+  state.acc = quantizeToReg((logValue * coeff) + offset);
 };
 
 /**
@@ -340,14 +349,13 @@ export const log: InstructionHandler = (state: FV1State, operands: number[]) => 
 export const exp: InstructionHandler = (state: FV1State, operands: number[]) => {
   const coeff = clampRDAXCoeff(operands[0]);
   const offset = operands[1];
-  
-  // Scale and offset input
-  const scaled = saturatingMul(state.acc, coeff);
-  const adjusted = saturatingAdd(scaled, offset);
-  
-  // Apply EXP shift (left-shift by 4 bits) and compute 2^x
-  const expValue = Math.pow(2, adjusted * 16); // *16 = left-shift by 4 bits
-  state.acc = saturate(expValue);
+  const acc = state.acc;
+  if (acc >= 0) {
+    state.acc = quantizeToReg((0.9999998807907104 * coeff) + offset);
+    return;
+  }
+  const expValue = Math.pow(2, acc * 16);
+  state.acc = quantizeToReg((expValue * coeff) + offset);
 };
 
 /**
@@ -362,13 +370,10 @@ export const exp: InstructionHandler = (state: FV1State, operands: number[]) => 
  */
 export const and: InstructionHandler = (state: FV1State, operands: number[]) => {
   const mask = operands[0];
-  
-  // Convert to fixed-point, apply bitwise AND, convert back
-  const accInt = Math.trunc(state.acc * (1 << 23));
-  const maskInt = Math.trunc(mask * (1 << 23));
-  const result = (accInt & maskInt) / (1 << 23);
-  
-  state.acc = saturate(result);
+  const accInt = floatToFixed(state.acc);
+  const maskInt = resolveMask(mask);
+  const result = signExtend24(accInt & maskInt);
+  state.acc = fixedToFloat(result);
 };
 
 /**
@@ -383,13 +388,10 @@ export const and: InstructionHandler = (state: FV1State, operands: number[]) => 
  */
 export const or: InstructionHandler = (state: FV1State, operands: number[]) => {
   const mask = operands[0];
-  
-  // Convert to fixed-point, apply bitwise OR, convert back
-  const accInt = Math.trunc(state.acc * (1 << 23));
-  const maskInt = Math.trunc(mask * (1 << 23));
-  const result = (accInt | maskInt) / (1 << 23);
-  
-  state.acc = saturate(result);
+  const accInt = floatToFixed(state.acc);
+  const maskInt = resolveMask(mask);
+  const result = signExtend24(accInt | maskInt);
+  state.acc = fixedToFloat(result);
 };
 
 /**
@@ -404,13 +406,10 @@ export const or: InstructionHandler = (state: FV1State, operands: number[]) => {
  */
 export const xor: InstructionHandler = (state: FV1State, operands: number[]) => {
   const mask = operands[0];
-  
-  // Convert to fixed-point, apply bitwise XOR, convert back
-  const accInt = Math.trunc(state.acc * (1 << 23));
-  const maskInt = Math.trunc(mask * (1 << 23));
-  const result = (accInt ^ maskInt) / (1 << 23);
-  
-  state.acc = saturate(result);
+  const accInt = floatToFixed(state.acc);
+  const maskInt = resolveMask(mask);
+  const result = signExtend24(accInt ^ maskInt);
+  state.acc = fixedToFloat(result);
 };
 
 /**
@@ -421,11 +420,9 @@ export const xor: InstructionHandler = (state: FV1State, operands: number[]) => 
  * Reference: http://www.spinsemi.com/knowledge_base/inst_syntax.html#NOT
  */
 export const not: InstructionHandler = (state: FV1State, _operands: number[]) => {
-  // Convert to fixed-point, apply bitwise NOT, convert back
-  const accInt = Math.trunc(state.acc * (1 << 23));
-  const result = (~accInt & 0xFFFFFF) / (1 << 23); // Mask to 24 bits
-  
-  state.acc = saturate(result);
+  const accInt = floatToFixed(state.acc);
+  const result = signExtend24(~accInt);
+  state.acc = fixedToFloat(result);
 };
 
 /**
