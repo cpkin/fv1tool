@@ -34,6 +34,9 @@ interface AudioState {
 
   // CHO delay depth multiplier
   choDepth: number
+
+  // Knob re-render mode
+  knobMode: 'live' | 'manual'
   
   // Cached render data (for fast re-render on knob changes)
   cachedInstructions: CompiledInstruction[] | null
@@ -59,6 +62,7 @@ interface AudioState {
   setPots: (pots: Partial<PotValues>) => void
   setWetMix: (value: number) => void
   setChoDepth: (value: number) => void
+  setKnobMode: (mode: AudioState['knobMode']) => void
   setCachedRender: (instructions: CompiledInstruction[], ioMode: IOMode, inputBuffer: AudioBuffer) => void
   clearCachedRender: () => void
   resetRenderState: () => void
@@ -88,6 +92,7 @@ export const useAudioStore = create<AudioState>((set) => ({
   pots: DEFAULT_POTS,
   wetMix: 1,
   choDepth: 1,
+  knobMode: 'live',
   cachedInstructions: null,
   cachedIOMode: null,
   cachedInputBuffer: null,
@@ -109,6 +114,7 @@ export const useAudioStore = create<AudioState>((set) => ({
   setPots: (pots) => set((state) => ({ pots: { ...state.pots, ...pots } })),
   setWetMix: (value) => set({ wetMix: Math.max(0, Math.min(1, value)) }),
   setChoDepth: (value) => set({ choDepth: Math.max(0.1, Math.min(4, value)) }),
+  setKnobMode: (mode) => set({ knobMode: mode }),
   setCachedRender: (instructions, ioMode, inputBuffer) => set({
     cachedInstructions: instructions,
     cachedIOMode: ioMode,

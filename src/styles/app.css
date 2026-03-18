@@ -944,6 +944,55 @@ body {
 }
 
 /* Knob Panel */
+.knob-panel-wrapper {
+  margin: 16px 0;
+}
+
+.knob-mode-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: 8px;
+}
+
+.mode-btn {
+  padding: 4px 14px;
+  font-size: 0.8rem;
+  border: 1px solid var(--border);
+  background: var(--bg, #fff);
+  color: var(--ink-muted, #6b5e50);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.mode-btn:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.mode-btn:last-child {
+  border-radius: 0 6px 6px 0;
+  border-left: none;
+}
+
+.mode-btn-active {
+  background: var(--accent, #8b7355);
+  color: #fff;
+  border-color: var(--accent, #8b7355);
+}
+
+.knob-mode-hint {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--ink-muted, #6b5e50);
+  margin: 4px 0 0;
+}
+
+.rerender-button {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+}
+
 .knob-panel {
   display: flex;
   justify-content: center;
@@ -953,7 +1002,6 @@ body {
   background: linear-gradient(140deg, #fff 0%, #f7f3ee 100%);
   border-radius: 12px;
   border: 1px solid var(--border);
-  margin: 16px 0;
 }
 
 .knob-panel-disabled {
