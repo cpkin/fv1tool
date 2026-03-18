@@ -43,26 +43,37 @@ export class CompilationError extends Error {
  * @param equates - Equate symbol table for resolving symbolic names
  * @returns Register index (0-31) or special register value
  */
+// Hardware register index → SpinGPT compiler index for numeric indices > 31
+// SpinCAD outputs raw hardware register addresses (32=ADCL, 33=ADCR, etc.)
+const HARDWARE_REG_MAP: Record<number, number> = {
+  20: 32,  // ADCL  (hw 20 → compiler 32)
+  21: 33,  // ADCR
+  22: 34,  // DACL
+  23: 35,  // DACR
+  24: 24,  // ADDR_PTR
+  // Hardware indices 32-63 are REG0-REG31
+};
+
 function parseRegister(operand: string, equates: Record<string, { value: string }>): number {
   let trimmed = operand.trim().toLowerCase();
-  
+
   // Resolve equates first (e.g., "input" -> "ADCL")
   if (trimmed in equates) {
     trimmed = equates[trimmed].value.toLowerCase();
   }
-  
+
   // Special registers (ADC/DAC are mapped to virtual registers)
-  if (trimmed === 'adcl') return 32; // Virtual register for ADC left
-  if (trimmed === 'adcr') return 33; // Virtual register for ADC right
-  if (trimmed === 'dacl') return 34; // Virtual register for DAC left
-  if (trimmed === 'dacr') return 35; // Virtual register for DAC right
-  if (trimmed === 'sin0') return 36; // LFO sine 0
-  if (trimmed === 'sin1') return 37; // LFO sine 1
-  if (trimmed === 'rmp0') return 38; // LFO ramp 0
-  if (trimmed === 'rmp1') return 39; // LFO ramp 1
+  if (trimmed === 'adcl') return 32;
+  if (trimmed === 'adcr') return 33;
+  if (trimmed === 'dacl') return 34;
+  if (trimmed === 'dacr') return 35;
+  if (trimmed === 'sin0') return 36;
+  if (trimmed === 'sin1') return 37;
+  if (trimmed === 'rmp0') return 38;
+  if (trimmed === 'rmp1') return 39;
   if (trimmed === 'addr_ptr' || trimmed === 'addrptr') return 24;
-  if (trimmed === 'cos0') return 36; // COS0 shares register with SIN0 (COS flag selects)
-  if (trimmed === 'cos1') return 37; // COS1 shares register with SIN1
+  if (trimmed === 'cos0') return 36;
+  if (trimmed === 'cos1') return 37;
   // SpinCAD LFO parameter register names
   if (trimmed === 'sin0_rate') return 43;
   if (trimmed === 'sin0_range') return 44;
@@ -74,10 +85,10 @@ function parseRegister(operand: string, equates: Record<string, { value: string 
   if (trimmed === 'rmp1_range') return 50;
 
   // POT registers (runtime-resolved, use placeholder indices)
-  if (trimmed === 'pot0') return 40; // POT0 placeholder
-  if (trimmed === 'pot1') return 41; // POT1 placeholder
-  if (trimmed === 'pot2') return 42; // POT2 placeholder
-  
+  if (trimmed === 'pot0') return 40;
+  if (trimmed === 'pot1') return 41;
+  if (trimmed === 'pot2') return 42;
+
   // Named registers: reg0-reg31
   const regMatch = trimmed.match(/^reg(\d+)$/);
   if (regMatch) {
@@ -86,38 +97,74 @@ function parseRegister(operand: string, equates: Record<string, { value: string 
       return index;
     }
   }
-  
-  // Direct numeric index
+
+  // Direct numeric index — support full FV-1 hardware range (0-63)
   const numMatch = trimmed.match(/^(\d+)$/);
   if (numMatch) {
     const index = parseInt(numMatch[1], 10);
     if (index >= 0 && index <= 31) {
-      return index;
+      return index; // REG0-REG31
+    }
+    // Hardware special register indices (20-24)
+    if (index in HARDWARE_REG_MAP) {
+      return HARDWARE_REG_MAP[index];
+    }
+    // Hardware indices 32-63 → REG0-REG31
+    if (index >= 32 && index <= 63) {
+      return index - 32;
     }
   }
-  
+
+  // Last resort: if the resolved value is numeric (e.g., equate to "-0.5"),
+  // truncate to a 6-bit register index. This handles buggy programs like
+  // shimmer-2.spn where "mulx kd" and "equ kd -0.5" is used.
+  const numericValue = parseFloat(trimmed);
+  if (!isNaN(numericValue)) {
+    const index = Math.abs(Math.floor(numericValue)) & 0x3f;
+    if (index >= 0 && index <= 31) return index;
+    if (index in HARDWARE_REG_MAP) return HARDWARE_REG_MAP[index];
+    if (index >= 32 && index <= 63) return index - 32;
+    return 0;
+  }
+
   throw new Error(`Invalid register: ${operand}`);
 }
 
 function parseLfoSelector(operand: string, type: 'sin' | 'rmp' | 'any'): number {
   const trimmed = operand.trim().toLowerCase();
 
+  // Named selectors: sin0, sin1, rmp0, rmp1
   const supportedTypes = type === 'any' ? ['sin', 'rmp'] : [type];
   for (const prefix of supportedTypes) {
     if (trimmed.startsWith(prefix)) {
       const index = parseInt(trimmed.slice(prefix.length), 10);
       if (index === 0 || index === 1) {
         if (type === 'any' && prefix === 'rmp') {
-          return index + 2;
+          return index + 2; // rmp0=2, rmp1=3
         }
         return index;
       }
     }
   }
 
+  // Numeric selectors — FV-1 hardware encoding: 0=SIN0, 1=SIN1, 2=RMP0, 3=RMP1
   const numeric = parseInt(trimmed, 10);
-  if (numeric === 0 || numeric === 1) {
-    return numeric;
+  if (!isNaN(numeric)) {
+    if (type === 'any') {
+      if (numeric >= 0 && numeric <= 3) return numeric;
+    } else if (type === 'sin') {
+      if (numeric === 0 || numeric === 1) return numeric;
+      // SpinCAD encoding: 8 = SIN0 with COS flag, 9 = SIN1 with COS flag
+      // These are only used with CHO RDAL which reads the raw LFO value.
+      // 8 → lfoSelect=0 (handled separately via flags in CHO)
+      // 9 → lfoSelect=1
+      if (numeric === 8) return 0;
+      if (numeric === 9) return 1;
+    } else {
+      // type === 'rmp'
+      if (numeric === 0 || numeric === 2) return 0; // rmp0 — SpinCAD uses 2 for RMP0
+      if (numeric === 1 || numeric === 3) return 1; // rmp1 — SpinCAD uses 3 for RMP1
+    }
   }
 
   throw new Error(`Invalid LFO selector: ${operand}`);
@@ -225,28 +272,42 @@ function parseChoOperands(
   mode: number,
   operandOffset: number,
   memoryAddresses: Record<string, number>,
+  equates?: Record<string, { value: string }>,
 ): number[] {
   const operands: number[] = [mode];
 
+  // Parse LFO selector — may contain embedded flags for SpinCAD numeric selectors
+  let embeddedFlags = 0;
   if (instruction.operands.length >= operandOffset + 1) {
-    const lfoSelect = parseLfoSelector(instruction.operands[operandOffset], 'any');
-    operands.push(lfoSelect);
+    const lfoOperand = instruction.operands[operandOffset].trim();
+    const lfoNumeric = parseInt(lfoOperand, 10);
+    if (!isNaN(lfoNumeric) && lfoNumeric > 3) {
+      // SpinCAD combined encoding: low 2 bits = lfoSel, upper bits = flags
+      // e.g., 8 = lfoSel=0, flags=COS (CHO RDAL,8 reads COS0)
+      operands.push(lfoNumeric & 0x03);
+      embeddedFlags = lfoNumeric >> 2;
+    } else {
+      operands.push(parseLfoSelector(lfoOperand, 'any'));
+    }
   }
 
   if (instruction.operands.length >= operandOffset + 2) {
-    operands.push(parseChoFlags(instruction.operands[operandOffset + 1]));
+    operands.push(parseChoFlags(instruction.operands[operandOffset + 1]) | embeddedFlags);
+  } else if (embeddedFlags) {
+    // No explicit flags operand but we have embedded flags from the selector
+    operands.push(embeddedFlags);
   }
 
   if (instruction.operands.length >= operandOffset + 3) {
     if (mode === 1) {
-      operands.push(parseCoefficient(instruction.operands[operandOffset + 2]));
+      operands.push(parseCoefficient(instruction.operands[operandOffset + 2], equates, memoryAddresses));
     } else {
       operands.push(parseDelayWriteAddress(instruction.operands[operandOffset + 2], memoryAddresses));
     }
   }
 
   if (mode === 1 && instruction.operands.length >= operandOffset + 4) {
-    operands.push(parseCoefficient(instruction.operands[operandOffset + 3]));
+    operands.push(parseCoefficient(instruction.operands[operandOffset + 3], equates, memoryAddresses));
   }
 
   return operands;
@@ -264,47 +325,160 @@ function parseChoOperands(
  * @param operand - Coefficient string
  * @returns Numeric coefficient value
  */
-function parseCoefficient(
-  operand: string,
-  equates?: Record<string, { value: string }>,
-): number {
-  let trimmed = operand.trim();
+/** Context for expression evaluation: equate table + memory symbol table. */
+interface ExprContext {
+  equates?: Record<string, { value: string }>;
+  memoryAddresses?: Record<string, number>;
+}
 
-  // Resolve equates (e.g., "crush" → "0xfc0000")
-  if (equates) {
+/**
+ * Parse a single atomic value (no operators).
+ * Handles: hex ($FF, 0xFF), binary (%101), decimal, POT refs, equate names, memory symbols.
+ */
+function parseAtomicValue(token: string, ctx: ExprContext): number {
+  const trimmed = token.trim();
+  if (!trimmed) return 0;
+
+  // Resolve equates (e.g., "crush" → "0xfc0000", "kiap" → "0.5")
+  if (ctx.equates) {
     const lower = trimmed.toLowerCase();
-    if (lower in equates) {
-      trimmed = equates[lower].value.trim();
+    if (lower in ctx.equates) {
+      // Recursively evaluate in case equate value is itself an expression
+      return evaluateExpression(ctx.equates[lower].value.trim(), ctx);
     }
   }
 
-  // POT references (will be resolved at runtime)
-  if (trimmed.toLowerCase().startsWith('pot')) {
-    // POT values are placeholders - compiler can't resolve them
-    // Return 0 as placeholder (runtime will use actual POT values)
-    return 0;
+  // Resolve memory symbols (e.g., "Line1" → 2338)
+  if (ctx.memoryAddresses) {
+    const lower = trimmed.toLowerCase();
+    if (lower in ctx.memoryAddresses) {
+      return ctx.memoryAddresses[lower];
+    }
   }
+
+  // POT references (runtime-resolved, placeholder 0)
+  if (trimmed.toLowerCase().startsWith('pot')) return 0;
 
   // Hexadecimal: $FF or 0xFF
-  if (trimmed.startsWith('$')) {
-    return parseInt(trimmed.slice(1), 16);
-  }
-  if (trimmed.startsWith('0x') || trimmed.startsWith('0X')) {
-    return parseInt(trimmed.slice(2), 16);
-  }
+  if (trimmed.startsWith('$')) return parseInt(trimmed.slice(1), 16);
+  if (trimmed.startsWith('0x') || trimmed.startsWith('0X')) return parseInt(trimmed.slice(2), 16);
 
   // Binary: %10101010
-  if (trimmed.startsWith('%')) {
-    return parseInt(trimmed.slice(1), 2);
-  }
+  if (trimmed.startsWith('%')) return parseInt(trimmed.slice(1), 2);
 
-  // Decimal (default)
+  // Decimal
   const value = parseFloat(trimmed);
-  if (isNaN(value)) {
-    throw new Error(`Invalid coefficient: ${operand}`);
+  if (!isNaN(value)) return value;
+
+  throw new Error(`Invalid value: ${token}`);
+}
+
+/**
+ * Evaluate a simple arithmetic expression with equate resolution.
+ *
+ * Supports: +, -, *, / between atoms. No parentheses (not needed for SpinASM).
+ * Respects operator precedence (* / before + -).
+ *
+ * Examples:
+ *   "-kiap"            → negate equate value
+ *   "Line1 * 256"      → equate * literal
+ *   "ptrmax - ptrmin"  → equate - equate
+ *   "1/256"            → literal division
+ *   "-1/256"           → unary minus then division
+ */
+function evaluateExpression(
+  expr: string,
+  ctx: ExprContext,
+): number {
+  const trimmed = expr.trim();
+  if (!trimmed) return 0;
+
+  // Tokenize: split into atoms and operators, respecting unary minus.
+  // We handle tokens like: "- 1 / 256", "Line1 * 256", "-kiap", "0xfc0000"
+  const tokens: Array<{ type: 'num'; value: number } | { type: 'op'; value: string }> = [];
+  let pos = 0;
+  const s = trimmed;
+
+  while (pos < s.length) {
+    // Skip whitespace
+    while (pos < s.length && (s[pos] === ' ' || s[pos] === '\t')) pos++;
+    if (pos >= s.length) break;
+
+    const ch = s[pos];
+
+    // Operator (but not unary minus)
+    if ((ch === '+' || ch === '-' || ch === '*' || ch === '/') && tokens.length > 0 && tokens[tokens.length - 1].type === 'num') {
+      tokens.push({ type: 'op', value: ch });
+      pos++;
+      continue;
+    }
+
+    // Atom: read until next operator or end
+    // An atom can start with '-' (unary), '$', '0x', '%', digit, or letter
+    let atomStart = pos;
+    // Handle unary minus
+    if (ch === '-' || ch === '+') pos++;
+    // Read the rest of the atom (identifier, hex literal, number)
+    while (pos < s.length && s[pos] !== '+' && s[pos] !== '*' && s[pos] !== '/' && s[pos] !== ' ' && s[pos] !== '\t') {
+      // A '-' is part of the atom only if it's the first char (unary)
+      if (s[pos] === '-' && pos > atomStart) break;
+      pos++;
+    }
+
+    const atom = s.slice(atomStart, pos).trim();
+    if (!atom) continue;
+
+    // Handle unary minus on an identifier: "-kiap" → -1 * resolve("kiap")
+    if (atom.startsWith('-') && atom.length > 1 && !/^-?\d/.test(atom) && !atom.startsWith('-$') && !atom.startsWith('-0x') && !atom.startsWith('-%')) {
+      const inner = atom.slice(1);
+      tokens.push({ type: 'num', value: -parseAtomicValue(inner, ctx) });
+    } else {
+      tokens.push({ type: 'num', value: parseAtomicValue(atom, ctx) });
+    }
   }
 
-  return value;
+  if (tokens.length === 0) return 0;
+  if (tokens.length === 1 && tokens[0].type === 'num') return tokens[0].value;
+
+  // Evaluate with precedence: first pass for * and /, second for + and -
+  // Build a flat list alternating num, op, num, op, ...
+  const nums: number[] = [];
+  const ops: string[] = [];
+  for (const t of tokens) {
+    if (t.type === 'num') nums.push(t.value);
+    else ops.push(t.value);
+  }
+
+  // Pass 1: evaluate * and /
+  const nums2: number[] = [nums[0]];
+  const ops2: string[] = [];
+  for (let i = 0; i < ops.length; i++) {
+    if (ops[i] === '*' || ops[i] === '/') {
+      const left = nums2.pop()!;
+      const right = nums[i + 1];
+      nums2.push(ops[i] === '*' ? left * right : (right !== 0 ? left / right : 0));
+    } else {
+      ops2.push(ops[i]);
+      nums2.push(nums[i + 1]);
+    }
+  }
+
+  // Pass 2: evaluate + and -
+  let result = nums2[0];
+  for (let i = 0; i < ops2.length; i++) {
+    result = ops2[i] === '+' ? result + nums2[i + 1] : result - nums2[i + 1];
+  }
+
+  return result;
+}
+
+function parseCoefficient(
+  operand: string,
+  equates?: Record<string, { value: string }>,
+  memoryAddresses?: Record<string, number>,
+): number {
+  const ctx: ExprContext = { equates, memoryAddresses };
+  return evaluateExpression(operand.trim(), ctx);
 }
 
 /**
@@ -328,8 +502,9 @@ function parseAddress(operand: string, symbols: Record<string, number>): number 
     return parseInt(numMatch[1], 10);
   }
   
-  // Label reference with # suffix (e.g., "delay#")
-  const labelMatch = trimmed.match(/^([a-zA-Z_][a-zA-Z0-9_]*)#$/);
+  // Label reference with # or ^ suffix (e.g., "delay#", "delay^")
+  // Both mean end-of-buffer address (^ is an alternate syntax used by some assemblers)
+  const labelMatch = trimmed.match(/^([a-zA-Z_][a-zA-Z0-9_]*)[#^]$/);
   if (labelMatch) {
     const label = labelMatch[1].toLowerCase();
     if (!(label in symbols)) {
@@ -337,18 +512,18 @@ function parseAddress(operand: string, symbols: Record<string, number>): number 
     }
     return symbols[label] + MAX_DELAY_RAM;
   }
-  
-  // Expression with # separator: label#+offset (e.g., "delay#+100")
-  const exprHashMatch = trimmed.match(/^([a-zA-Z_][a-zA-Z0-9_]*)#([+\-])(\d+)$/);
+
+  // Expression with # or ^ separator: label#+offset (e.g., "delay#+100", "delay^+100")
+  const exprHashMatch = trimmed.match(/^([a-zA-Z_][a-zA-Z0-9_]*)[#^]([+\-])(\d+)$/);
   if (exprHashMatch) {
     const label = exprHashMatch[1].toLowerCase();
     const op = exprHashMatch[2];
     const offset = parseInt(exprHashMatch[3], 10);
-    
+
     if (!(label in symbols)) {
       throw new Error(`Unresolved label: ${label}`);
     }
-    
+
     const base = symbols[label];
     const absolute = op === '+' ? base + offset : base - offset;
     return absolute + MAX_DELAY_RAM;
@@ -382,8 +557,8 @@ function parseAddress(operand: string, symbols: Record<string, number>): number 
 function parseDelayWriteAddress(operand: string, symbols: Record<string, number>): number {
   const trimmed = operand.trim();
 
-  // Preserve explicit pointer-relative addressing
-  if (trimmed.includes('#')) {
+  // Preserve explicit pointer-relative addressing (# or ^ suffix)
+  if (trimmed.includes('#') || trimmed.includes('^')) {
     return parseAddress(trimmed, symbols);
   }
 
@@ -447,7 +622,7 @@ function compileInstruction(
   if (choAliasMode !== undefined) {
     return {
       opcode: 'cho',
-      operands: parseChoOperands(instruction, choAliasMode, 0, memoryAddresses),
+      operands: parseChoOperands(instruction, choAliasMode, 0, memoryAddresses, equates),
       line: instruction.line,
     };
   }
@@ -466,7 +641,7 @@ function compileInstruction(
           operands.push(parseRegister(instruction.operands[0], equates));
         }
         if (instruction.operands.length >= 2) {
-          operands.push(parseCoefficient(instruction.operands[1], equates));
+          operands.push(parseCoefficient(instruction.operands[1], equates, memoryAddresses));
         }
         break;
       
@@ -484,7 +659,7 @@ function compileInstruction(
           operands.push(parseAddress(instruction.operands[0], memoryAddresses));
         }
         if (instruction.operands.length >= 2) {
-          operands.push(parseCoefficient(instruction.operands[1], equates));
+          operands.push(parseCoefficient(instruction.operands[1], equates, memoryAddresses));
         }
         break;
       
@@ -495,14 +670,14 @@ function compileInstruction(
           operands.push(parseDelayWriteAddress(instruction.operands[0], memoryAddresses));
         }
         if (instruction.operands.length >= 2) {
-          operands.push(parseCoefficient(instruction.operands[1], equates));
+          operands.push(parseCoefficient(instruction.operands[1], equates, memoryAddresses));
         }
         break;
       
       // RMPA: coeff
       case 'rmpa':
         if (instruction.operands.length >= 1) {
-          operands.push(parseCoefficient(instruction.operands[0], equates));
+          operands.push(parseCoefficient(instruction.operands[0], equates, memoryAddresses));
         }
         break;
       
@@ -511,10 +686,10 @@ function compileInstruction(
       case 'log':
       case 'exp':
         if (instruction.operands.length >= 1) {
-          operands.push(parseCoefficient(instruction.operands[0], equates));
+          operands.push(parseCoefficient(instruction.operands[0], equates, memoryAddresses));
         }
         if (instruction.operands.length >= 2) {
-          operands.push(parseCoefficient(instruction.operands[1], equates));
+          operands.push(parseCoefficient(instruction.operands[1], equates, memoryAddresses));
         }
         break;
       
@@ -523,7 +698,7 @@ function compileInstruction(
       case 'or':
       case 'xor':
         if (instruction.operands.length >= 1) {
-          operands.push(parseCoefficient(instruction.operands[0], equates));
+          operands.push(parseCoefficient(instruction.operands[0], equates, memoryAddresses));
         }
         break;
       
@@ -569,10 +744,10 @@ function compileInstruction(
           operands.push(parseLfoSelector(instruction.operands[0], type));
         }
         if (instruction.operands.length >= 2) {
-          operands.push(parseCoefficient(instruction.operands[1], equates));
+          operands.push(parseCoefficient(instruction.operands[1], equates, memoryAddresses));
         }
         if (instruction.operands.length >= 3) {
-          operands.push(parseCoefficient(instruction.operands[2], equates));
+          operands.push(parseCoefficient(instruction.operands[2], equates, memoryAddresses));
         }
         break;
       
@@ -595,7 +770,7 @@ function compileInstruction(
       case 'cho': {
         if (instruction.operands.length >= 1) {
           const mode = parseChoMode(instruction.operands[0]);
-          operands.push(...parseChoOperands(instruction, mode, 1, memoryAddresses));
+          operands.push(...parseChoOperands(instruction, mode, 1, memoryAddresses, equates));
         }
         break;
       }
@@ -610,7 +785,7 @@ function compileInstruction(
         // Unknown opcode - pass operands as-is
         for (const op of instruction.operands) {
           try {
-            operands.push(parseCoefficient(op, equates));
+            operands.push(parseCoefficient(op, equates, memoryAddresses));
           } catch {
             // If parsing fails, use 0 as placeholder
             operands.push(0);
