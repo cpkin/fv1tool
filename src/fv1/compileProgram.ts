@@ -327,7 +327,7 @@ function parseChoOperands(
  * @returns Numeric coefficient value
  */
 /** Context for expression evaluation: equate table + memory symbol table. */
-interface ExprContext {
+export interface ExprContext {
   equates?: Record<string, { value: string }>;
   memoryAddresses?: Record<string, number>;
 }
@@ -336,7 +336,7 @@ interface ExprContext {
  * Parse a single atomic value (no operators).
  * Handles: hex ($FF, 0xFF), binary (%101), decimal, POT refs, equate names, memory symbols.
  */
-function parseAtomicValue(token: string, ctx: ExprContext): number {
+export function parseAtomicValue(token: string, ctx: ExprContext): number {
   const trimmed = token.trim();
   if (!trimmed) return 0;
 
@@ -360,12 +360,15 @@ function parseAtomicValue(token: string, ctx: ExprContext): number {
   // POT references (runtime-resolved, placeholder 0)
   if (trimmed.toLowerCase().startsWith('pot')) return 0;
 
-  // Hexadecimal: $FF or 0xFF
+  // Hexadecimal: $FF, 0xFF (with optional leading minus: -$FF, -0xFF)
   if (trimmed.startsWith('$')) return parseInt(trimmed.slice(1), 16);
+  if (trimmed.startsWith('-$')) return -parseInt(trimmed.slice(2), 16);
   if (trimmed.startsWith('0x') || trimmed.startsWith('0X')) return parseInt(trimmed.slice(2), 16);
+  if (trimmed.startsWith('-0x') || trimmed.startsWith('-0X')) return -parseInt(trimmed.slice(3), 16);
 
-  // Binary: %10101010 (underscores allowed as visual separators)
+  // Binary: %10101010 (underscores allowed as visual separators, optional leading minus)
   if (trimmed.startsWith('%')) return parseInt(trimmed.slice(1).replace(/_/g, ''), 2);
+  if (trimmed.startsWith('-%')) return -parseInt(trimmed.slice(2).replace(/_/g, ''), 2);
 
   // Decimal
   const value = parseFloat(trimmed);
@@ -387,7 +390,7 @@ function parseAtomicValue(token: string, ctx: ExprContext): number {
  *   "1/256"            → literal division
  *   "-1/256"           → unary minus then division
  */
-function evaluateExpression(
+export function evaluateExpression(
   expr: string,
   ctx: ExprContext,
 ): number {
