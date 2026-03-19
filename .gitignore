@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 tmp/
+.planning/
 
 # Editor directories and files
 .vscode/*
@@ -23,3 +24,4 @@ tmp/
 *.njsproj
 *.sln
 *.sw?
+.vercel
