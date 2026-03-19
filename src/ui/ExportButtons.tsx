@@ -4,10 +4,12 @@ import { useValidationStore } from '../store/validationStore'
 import { downloadWAV, downloadText, estimateWAVSize } from '../utils/exportWAV'
 import { encodeState, getCurrentState } from '../utils/urlState'
 
-/**
- * Export buttons for downloading WAV audio, .spn source, and sharing URLs
- */
-export default function ExportButtons() {
+interface ExportButtonsProps {
+  wavOnly?: boolean
+  shareOnly?: boolean
+}
+
+export default function ExportButtons({ wavOnly, shareOnly }: ExportButtonsProps) {
   const outputBuffer = useAudioStore((state) => state.outputBuffer)
   const source = useValidationStore((state) => state.source)
   const pots = useAudioStore((state) => state.pots)
@@ -22,7 +24,6 @@ export default function ExportButtons() {
   const handleDownloadWAV = () => {
     if (!outputBuffer) return
 
-    // Warn for very large files (>100MB)
     const estimatedSize = estimateWAVSize(outputBuffer)
     const channels = outputBuffer.numberOfChannels
     const length = outputBuffer.length
@@ -30,13 +31,7 @@ export default function ExportButtons() {
     const totalSize = 44 + length * channels * bytesPerSample
 
     if (totalSize > 100 * 1024 * 1024) {
-      if (
-        !confirm(
-          `This WAV file will be ${estimatedSize}. Continue with download?`
-        )
-      ) {
-        return
-      }
+      if (!confirm(`This WAV file will be ${estimatedSize}. Continue with download?`)) return
     }
 
     downloadWAV(outputBuffer, 'spingpt-render.wav')
@@ -52,24 +47,16 @@ export default function ExportButtons() {
 
     try {
       setShareError(null)
-
-      // Get current state
       const state = getCurrentState(source, pots, selectedDemo)
       const hash = encodeState(state)
-
-      // Check URL length (safe limit is ~2000 chars)
       const fullUrl = `${window.location.origin}${window.location.pathname}${hash}`
       if (fullUrl.length > 2000) {
-        setShareError(
-          'Code too large for URL sharing (try shorter program)'
-        )
+        setShareError('Code too large for URL sharing (try shorter program)')
         return
       }
 
-      // Update browser URL
-      window.location.hash = hash.slice(1) // Remove leading #
+      window.location.hash = hash.slice(1)
 
-      // Copy to clipboard
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(fullUrl)
         setShowCopySuccess(true)
@@ -77,11 +64,46 @@ export default function ExportButtons() {
       } else {
         setShareError('Failed to copy link (clipboard access denied)')
       }
-    } catch (error) {
+    } catch {
       setShareError('Failed to copy link (clipboard access denied)')
     }
   }
 
+  // WAV-only mode (under oscilloscope)
+  if (wavOnly) {
+    return (
+      <button
+        type="button"
+        className="toolbar-btn"
+        onClick={handleDownloadWAV}
+        disabled={!hasAudio}
+        title={hasAudio ? `Download WAV (${estimateWAVSize(outputBuffer!)})` : 'No audio'}
+      >
+        Download .wav
+      </button>
+    )
+  }
+
+  // Share-only mode (in editor header)
+  if (shareOnly) {
+    return (
+      <>
+        <button
+          type="button"
+          className="toolbar-btn"
+          onClick={handleShare}
+          disabled={!hasSource}
+          title="Share via URL"
+        >
+          Share
+        </button>
+        {showCopySuccess && <span className="share-success">Copied!</span>}
+        {shareError && <span className="share-error">{shareError}</span>}
+      </>
+    )
+  }
+
+  // Full export buttons (footer)
   return (
     <div className="export-buttons">
       <button
@@ -91,8 +113,7 @@ export default function ExportButtons() {
         disabled={!hasAudio}
         title={hasAudio ? `Download WAV (${estimateWAVSize(outputBuffer!)})` : 'No audio to download'}
       >
-        <span className="button-icon">⬇</span>
-        Download WAV
+        WAV
       </button>
 
       <button
@@ -102,8 +123,7 @@ export default function ExportButtons() {
         disabled={!hasSource}
         title="Download .spn source code"
       >
-        <span className="button-icon">⬇</span>
-        Download .spn
+        .spn
       </button>
 
       <button
@@ -113,17 +133,11 @@ export default function ExportButtons() {
         disabled={!hasSource}
         title="Share code and knob settings via URL"
       >
-        <span className="button-icon">🔗</span>
         Share
       </button>
 
-      {showCopySuccess && (
-        <span className="share-success">✓ Link copied!</span>
-      )}
-
-      {shareError && (
-        <span className="share-error">{shareError}</span>
-      )}
+      {showCopySuccess && <span className="share-success">Link copied!</span>}
+      {shareError && <span className="share-error">{shareError}</span>}
     </div>
   )
 }

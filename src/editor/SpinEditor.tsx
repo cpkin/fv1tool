@@ -93,7 +93,17 @@ const SpinEditor = ({ value, onChange }: SpinEditorProps) => {
     }
   }, [value])
 
-  return <div className="editor-host" ref={containerRef} />
+  const handleContainerClick = useCallback((e: React.MouseEvent) => {
+    const view = viewRef.current
+    if (!view) return
+    // If click is on the container but not inside the CM content, focus the editor
+    const cmContent = view.contentDOM
+    if (!cmContent.contains(e.target as Node)) {
+      view.focus()
+    }
+  }, [])
+
+  return <div className="editor-host" ref={containerRef} onClick={handleContainerClick} />
 }
 
 export default SpinEditor

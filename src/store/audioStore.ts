@@ -46,7 +46,22 @@ interface AudioState {
   // Corpus validation
   corpusStatus: 'idle' | 'running' | 'complete' | 'error'
   corpusResult: CorpusRunResult | null
-  
+
+  // Bypass mode (passes dry signal when true)
+  bypass: boolean
+
+  // Visualization state
+  spectrogramEnabled: boolean
+  oscilloscopeChannel: 'left' | 'right' | 'both'
+  oscilloscopeTimeScale: number
+  showCleanSignal: boolean
+
+  // UI state
+  darkMode: boolean
+
+  // Detected input channel count (set after audio decode)
+  inputChannels: number
+
   // Actions
   setSelectedDemo: (demo: string | null) => void
   setUploadedFile: (file: File | null) => void
@@ -68,6 +83,13 @@ interface AudioState {
   resetRenderState: () => void
   setCorpusStatus: (status: AudioState['corpusStatus']) => void
   setCorpusResult: (result: CorpusRunResult | null) => void
+  setBypass: (bypass: boolean) => void
+  setSpectrogramEnabled: (enabled: boolean) => void
+  setOscilloscopeChannel: (channel: AudioState['oscilloscopeChannel']) => void
+  setOscilloscopeTimeScale: (scale: number) => void
+  setShowCleanSignal: (show: boolean) => void
+  setDarkMode: (dark: boolean) => void
+  setInputChannels: (channels: number) => void
 }
 
 const DEFAULT_POTS: PotValues = {
@@ -98,7 +120,14 @@ export const useAudioStore = create<AudioState>((set) => ({
   cachedInputBuffer: null,
   corpusStatus: 'idle',
   corpusResult: null,
-  
+  bypass: false,
+  spectrogramEnabled: true,
+  oscilloscopeChannel: 'both',
+  oscilloscopeTimeScale: 9999,
+  showCleanSignal: true,
+  darkMode: false,
+  inputChannels: 1,
+
   // Actions
   setSelectedDemo: (demo) => set({ selectedDemo: demo, uploadedFile: null }),
   setUploadedFile: (file) => set({ uploadedFile: file, selectedDemo: null }),
@@ -134,4 +163,11 @@ export const useAudioStore = create<AudioState>((set) => ({
   }),
   setCorpusStatus: (status) => set({ corpusStatus: status }),
   setCorpusResult: (result) => set({ corpusResult: result }),
+  setBypass: (bypass) => set({ bypass }),
+  setSpectrogramEnabled: (enabled) => set({ spectrogramEnabled: enabled }),
+  setOscilloscopeChannel: (channel) => set({ oscilloscopeChannel: channel }),
+  setOscilloscopeTimeScale: (scale) => set({ oscilloscopeTimeScale: Math.max(0.1, scale) }),
+  setShowCleanSignal: (show) => set({ showCleanSignal: show }),
+  setDarkMode: (dark) => set({ darkMode: dark }),
+  setInputChannels: (channels) => set({ inputChannels: channels }),
 }))
