@@ -1,6 +1,6 @@
 # SpinIDE
 
-**Browser-based IDE for the Spin Semiconductor FV-1 DSP chip.** Write SpinASM code, simulate the effect, and hear the result — no hardware required.
+**Browser-based IDE for the Spin Semiconductor FV-1 DSP chip.** Write SpinASM code, simulate the effect, and hear the result.
 
 **Live:** [spinide.vercel.app](https://spinide.vercel.app)
 
