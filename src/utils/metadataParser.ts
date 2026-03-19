@@ -1,5 +1,5 @@
 /**
- * Metadata extraction utilities for SpinGPT
+ * Metadata extraction utilities for SpinIDE
  * Parses ;@fx headers from SpinASM source code
  */
 

@@ -96,7 +96,7 @@ file yourfile.spn
 
 > **Any tool, script, or AI agent that writes `.spn` files must either produce CRLF line endings natively, or include a conversion step before the file is used with SpinASM.**
 
-Note: The SpinGPT simulator accepts both LF and CRLF. CRLF is only required when using the official SpinASM assembler on Windows.
+Note: The SpinIDE simulator accepts both LF and CRLF. CRLF is only required when using the official SpinASM assembler on Windows.
 
 ---
 
@@ -107,7 +107,7 @@ Note: The SpinGPT simulator accepts both LF and CRLF. CRLF is only required when
 - **Case-insensitive:** `RDAX`, `rdax`, and `Rdax` are all valid
 - **Comments:** semicolon (`;`) starts a comment and runs to end of line
 - **Whitespace:** spaces and tabs are interchangeable; multiple whitespace collapses to a single separator
-- **Line endings:** both LF and CRLF accepted by SpinGPT; CRLF **required** by SpinASM (see Section 3)
+- **Line endings:** both LF and CRLF accepted by SpinIDE; CRLF **required** by SpinASM (see Section 3)
 - **Operand separators:** commas separate operands
 - **Jump target labels:** identified by a trailing colon (e.g., `start:`)
 - **Binary literals:** `%` prefix (e.g., `%01100000_00000000_00000000`), underscores optional for readability
@@ -846,7 +846,7 @@ wrax tri, 0            ; store triangle (0 to 0.5 range)
 
 ## 12. Error Handling Policy (SpinASM Behavior)
 
-SpinASM and SpinGPT follow these error handling conventions:
+SpinASM and SpinIDE follow these error handling conventions:
 
 | Condition | Behavior |
 |---|---|
@@ -857,13 +857,13 @@ SpinASM and SpinGPT follow these error handling conventions:
 | Instruction count > 128 | Error (assembler halts) |
 | Delay RAM total > 32768 | Error (assembler halts) |
 
-When iterating with an AI tool, use the "Copy errors" feature in SpinGPT to paste all errors and warnings into the AI prompt in one click.
+When iterating with an AI tool, use the "Copy errors" feature in SpinIDE to paste all errors and warnings into the AI prompt in one click.
 
 ---
 
-## 13. SpinGPT Metadata Schema (`;@fx` Headers)
+## 13. SpinIDE Metadata Schema (`;@fx` Headers)
 
-SpinGPT supports optional structured metadata in `.spn` files for signal path diagram generation, pot labeling, and enhanced UI features. Metadata is **not required** for the assembler or simulator — it is SpinGPT-specific.
+SpinIDE supports optional structured metadata in `.spn` files for signal path diagram generation, pot labeling, and enhanced UI features. Metadata is **not required** for the assembler or simulator — it is SpinIDE-specific.
 
 ### 13.1 Format
 
@@ -910,13 +910,13 @@ Metadata is embedded as structured comments at the top of the file:
 - `memory` `samples` values must match the `MEM` sizes in the code
 - Total `memory.samples` across all entries must not exceed 32,768
 - All node IDs referenced in `edges` must exist in `nodes`
-- Feedback cycles in `edges` are supported and visually highlighted by SpinGPT
+- Feedback cycles in `edges` are supported and visually highlighted by SpinIDE
 
 ---
 
 ## 14. Simulation Fidelity Notes
 
-The SpinGPT simulator targets **gross correctness** — it is designed to catch functional bugs before hardware testing, not to produce bit-accurate hardware output.
+The SpinIDE simulator targets **gross correctness** — it is designed to catch functional bugs before hardware testing, not to produce bit-accurate hardware output.
 
 **What the simulator matches:**
 - Instruction semantics (ACC/PACC/LR behavior per opcode)
@@ -1030,7 +1030,7 @@ The patterns and conventions documented in this guide were informed by analysis 
 - **mstratman/fv1-programs** — Community-curated directory of 85+ FV-1 programs by authors including Spin Semi, Digital Larry (Holy City Audio), Don Stavely, David Rolo, Alex Lawrow, and many others. Covers reverbs, delays, modulation, pitch shifting, distortion, and utility effects.
   `https://github.com/mstratman/fv1-programs`
 
-### SpinGPT
+### SpinIDE
 
-- **SpinGPT** (this project): Web-based SpinASM IDE with compiler, FV-1 simulator, oscilloscope, FFT spectrum, delay memory visualization, and signal path diagrams.
-  `https://github.com/claypipkin/SpinGPT`
+- **SpinIDE** (this project): Web-based SpinASM IDE with compiler, FV-1 simulator, oscilloscope, FFT spectrum, delay memory visualization, and signal path diagrams.
+  `https://github.com/claypipkin/SpinIDE`

@@ -1,7 +1,7 @@
 # Community Tooling Gaps for FV-1 Development
 
 **Researched:** 2026-01-22  
-**Purpose:** Document real-world pain points with current FV-1 development tooling to inform SpinGPT design decisions.
+**Purpose:** Document real-world pain points with current FV-1 development tooling to inform SpinIDE design decisions.
 
 ## Research Sources
 
@@ -39,7 +39,7 @@ Key threads reviewed:
 - Maintain detailed notes about what works vs what simulates
 - Keep spare EEPROMs on hand for frequent testing
 
-**SpinGPT Opportunity:**
+**SpinIDE Opportunity:**
 Provide a "gross correctness" simulator that catches common bugs (resource overflows, silent outputs, unstable feedback) even if not sonically perfect. Clear documentation of simulation limitations prevents false confidence.
 
 ---
@@ -60,8 +60,8 @@ Provide a "gross correctness" simulator that catches common bugs (resource overf
 - Maintain Windows VM or dual-boot setup
 - Some users remote into Windows machines
 
-**SpinGPT Opportunity:**
-Browser-based tool works on all platforms without installation. While SpinGPT Phase 1 doesn't include an assembler, Phase 3 could provide WASM-based assembly in-browser.
+**SpinIDE Opportunity:**
+Browser-based tool works on all platforms without installation. While SpinIDE Phase 1 doesn't include an assembler, Phase 3 could provide WASM-based assembly in-browser.
 
 ---
 
@@ -81,7 +81,7 @@ Browser-based tool works on all platforms without installation. While SpinGPT Ph
 - Use text editor with basic syntax highlighting (no semantic validation)
 - Rely on assembler errors as first validation step
 
-**SpinGPT Opportunity:**
+**SpinIDE Opportunity:**
 Primary use case! Validate .spn code (from any source: SpinCAD export, AI generation, hand-written) with:
 - Immediate resource usage feedback (instruction count, RAM usage)
 - Lint warnings (unused pots, uninitialized registers, potential clipping)
@@ -105,7 +105,7 @@ Primary use case! Validate .spn code (from any source: SpinCAD export, AI genera
 - Ask community forum for help with error interpretation
 - Comment out blocks of code to isolate problems
 
-**SpinGPT Opportunity:**
+**SpinIDE Opportunity:**
 - Error messages with ±2 lines of context
 - Categorized messages: ERROR | WARNING | INFO
 - "Did you mean..." suggestions for typos
@@ -129,7 +129,7 @@ Primary use case! Validate .spn code (from any source: SpinCAD export, AI genera
 - Some users write scripts to automate parts of the pipeline
 - Use text-based formats and skip simulation entirely
 
-**SpinGPT Opportunity:**
+**SpinIDE Opportunity:**
 - ONE-CLICK "Copy errors & warnings" button for AI iteration
 - Fast paste → validate → simulate → hear audio loop (<2 seconds target)
 - Shareable URL encoding enables "try this variation" workflows
@@ -151,7 +151,7 @@ Primary use case! Validate .spn code (from any source: SpinCAD export, AI genera
 
 ---
 
-## Implications for SpinGPT Design
+## Implications for SpinIDE Design
 
 ### Priority 1: Audio Simulation
 - Must be better than SpinCAD's simulator (low bar)

@@ -115,13 +115,13 @@ function App() {
   // Download .spn
   const handleDownloadSpn = () => {
     if (!hasSource) return
-    downloadText(source, 'spingpt-program.spn', 'text/plain')
+    downloadText(source, 'spinide-program.spn', 'text/plain')
   }
 
   // LLM manifest copy
   const handleCopyManifest = async () => {
     try {
-      const manifestUrl = 'https://raw.githubusercontent.com/claypipkin/SpinGPT/main/docs/fv1-development-guide.md'
+      const manifestUrl = 'https://raw.githubusercontent.com/claypipkin/SpinIDE/main/docs/fv1-development-guide.md'
       const prompt = `Please read and internalize the FV-1 SpinASM development guide at:\n${manifestUrl}\n\nThis guide covers the FV-1 DSP architecture, SpinASM instruction set, delay RAM, LFOs, and programming patterns. Use it as reference when helping me write FV-1 programs.`
       await navigator.clipboard.writeText(prompt)
       setManifestCopied(true)
@@ -129,7 +129,7 @@ function App() {
     } catch {
       // Fallback: try to copy just the URL
       try {
-        await navigator.clipboard.writeText('https://raw.githubusercontent.com/claypipkin/SpinGPT/main/docs/fv1-development-guide.md')
+        await navigator.clipboard.writeText('https://raw.githubusercontent.com/claypipkin/SpinIDE/main/docs/fv1-development-guide.md')
         setManifestCopied(true)
         setTimeout(() => setManifestCopied(false), 3000)
       } catch {
@@ -147,7 +147,7 @@ function App() {
         {/* Compact header */}
         <header className="app-header">
           <div>
-            <p className="app-eyebrow">SpinGPT</p>
+            <p className="app-eyebrow">SpinIDE</p>
             <h1>FV-1 SpinASM IDE</h1>
           </div>
           <button
@@ -179,7 +179,7 @@ function App() {
           </button>
           {userGuideExpanded && (
             <div className="llm-guide-body">
-              <p><strong>SpinGPT</strong> is a browser-based IDE for the Spin Semiconductor FV-1 DSP chip. Write SpinASM code, simulate the effect, and hear the result.</p>
+              <p><strong>SpinIDE</strong> is a browser-based IDE for the Spin Semiconductor FV-1 DSP chip. Write SpinASM code, simulate the effect, and hear the result.</p>
               <ol>
                 <li><strong>Load audio</strong> — Pick a demo clip from the <em>Demo</em> dropdown, or click <em>Upload .wav</em> to use your own audio. The IDE auto-detects mono/stereo input.</li>
                 <li><strong>Write or paste code</strong> — Use an LLM (check out the LLM Usage Guide) to come up with an effect or drop a <code>.spn</code> file into the editor. Or pick an example from the <em>Examples</em> dropdown. Diagnostics update as you type.</li>
@@ -220,7 +220,7 @@ function App() {
                 </li>
               </ol>
               <div className="llm-guide-example">
-                <code>Please read and internalize the FV-1 SpinASM development guide at: https://raw.githubusercontent.com/claypipkin/SpinGPT/main/docs/fv1-development-guide.md</code>
+                <code>Please read and internalize the FV-1 SpinASM development guide at: https://raw.githubusercontent.com/claypipkin/SpinIDE/main/docs/fv1-development-guide.md</code>
               </div>
               <ol start={2}>
                 <li>This guide prompt covers the FV-1 DSP architecture, SpinASM instruction set, delay RAM, LFOs, and programming patterns. Use it as reference when helping me write FV-1 programs.</li>

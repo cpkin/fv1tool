@@ -34,12 +34,12 @@ export default function ExportButtons({ wavOnly, shareOnly }: ExportButtonsProps
       if (!confirm(`This WAV file will be ${estimatedSize}. Continue with download?`)) return
     }
 
-    downloadWAV(outputBuffer, 'spingpt-render.wav')
+    downloadWAV(outputBuffer, 'spinide-render.wav')
   }
 
   const handleDownloadSpn = () => {
     if (!hasSource) return
-    downloadText(source, 'spingpt-program.spn', 'text/plain')
+    downloadText(source, 'spinide-program.spn', 'text/plain')
   }
 
   const handleShare = async () => {

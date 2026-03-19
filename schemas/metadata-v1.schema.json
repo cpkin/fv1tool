@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://spingpt.dev/schemas/metadata-v1.schema.json",
-  "title": "SpinGPT Metadata Schema v1",
+  "$id": "https://spinide.dev/schemas/metadata-v1.schema.json",
+  "title": "SpinIDE Metadata Schema v1",
   "description": "JSON Schema for FV-1 SpinASM metadata headers, supporting versioned metadata with required fields for effect documentation, IO configuration, pot labeling, memory allocation, and signal flow graphs.",
   "type": "object",
   "required": [

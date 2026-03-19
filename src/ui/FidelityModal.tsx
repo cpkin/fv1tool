@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getFidelityDescription } from '../fv1/warnings'
 
-const FIDELITY_MODAL_KEY = 'spingpt-fidelity-acknowledged'
+const FIDELITY_MODAL_KEY = 'spinide-fidelity-acknowledged'
 
 export default function FidelityModal() {
   const [isOpen, setIsOpen] = useState(false)
@@ -32,7 +32,7 @@ export default function FidelityModal() {
         
         <div className="modal-body">
           <p className="fidelity-intro">
-            SpinGPT provides <strong>audition-quality</strong> FV-1 simulation for rapid development and bug catching.
+            SpinIDE provides <strong>audition-quality</strong> FV-1 simulation for rapid development and bug catching.
           </p>
           
           <div className="fidelity-description">
