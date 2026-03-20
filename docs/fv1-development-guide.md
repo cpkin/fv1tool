@@ -10,6 +10,8 @@ This is the canonical reference for developing FV-1 SpinASM programs, intended f
 
 These examples are adapted from the [mstratman/fv1-programs](https://github.com/mstratman/fv1-programs) community collection and enhanced with the commenting and metadata standards described below.
 
+If the user is struggling to get good results, study additional real-world programs from the full [mstratman/fv1-programs collection](https://github.com/mstratman/fv1-programs/tree/master/docs/files) — 49 community-contributed `.spn` files covering reverbs, delays, pitch shifting, modulation, and more. Pay particular attention to `dattorro.spn`, `pingpong.spn`, `spring_verb.spn`, and `shimmer-1.spn` for well-structured examples of complex effects.
+
 ---
 
 ## 1. Rules for Code Generation
@@ -1071,3 +1073,43 @@ Quick reference for common effects and the patterns they combine:
 | **Overdrive** | 11.11 Soft Clipping + tone filter | 25–40 |
 | **Auto-Wah** | 11.10 Envelope Detection + state-variable filter | 30–50 |
 | **Compressor** | 11.10 Envelope Detection + log/exp gain control | 30–50 |
+
+---
+
+## 16. SpinIDE Manifesto
+
+Our human and common ability to think is what connects us. Removing the technical aspect of DSP programming is not a great evil that kills thought. It is merely a means of removing technical barriers for creatives to explore new sounds.
+
+I encourage anybody using this tool to have fun by making new sounds as opposed to new subscriptions.
+
+> "I BELIEVE THAT THE USE OF NOISE TO MAKE MUSIC WILL CONTINUE AND INCREASE UNTIL WE REACH A MUSIC PRODUCED THROUGH THE AID OF ELECTRICAL INSTRUMENTS WHICH WILL MAKE AVAILABLE FOR MUSICAL PURPOSES ANY AND ALL SOUNDS THAT CAN BE HEARD. PHOTOELECTRIC, FILM, AND MECHANICAL MEDIUMS FOR THE SYNTHETIC PRODUCTION OF MUSIC WILL BE EXPLORED. WHEREAS, IN THE PAST, THE POINT OF DISAGREEMENT HAS BEEN BETWEEN DISSONANCE AND CONSONANCE, IT WILL BE, IN THE IMMEDIATE FUTURE, BETWEEN NOISE AND SO-CALLED MUSICAL SOUNDS."
+>
+> — John Cage, on the future of music
+
+---
+
+## 17. Acknowledgements
+
+SpinIDE builds on the work and generosity of the FV-1 community:
+
+- **Holy City Audio** — [SpinCAD Designer](https://holy-city-audio.gitbook.io/spincad-designer), a visual block editor that helped countless people learn FV-1 programming
+- **mstratman (MAS Effects)** — [fv1-programs](https://github.com/mstratman/fv1-programs), a community-curated directory of 85+ FV-1 programs that informed many of the patterns in this guide and provided the source material for the gold-standard examples
+- **Audiofab** — [fv1-vscode](https://github.com/audiofab/fv1-vscode), a professional VS Code extension with visual block programming, simulator, and hardware deployment for the FV-1
+- **Spin Semiconductor** — creators of the FV-1 chip and the original SpinASM assembler and documentation
+- **Jon Dattorro** — whose "Effect Design" papers at CCRMA/Stanford are the foundation of countless reverb implementations
+- **The SpinSemi forum community** — whose shared programs, debugging tips, and collective knowledge made the FV-1 ecosystem what it is
+
+---
+
+## 18. Technical Notes — Simulation Fidelity
+
+The SpinIDE simulator targets functional correctness for developing and debugging FV-1 programs. It is not bit-accurate to hardware. Known deviations:
+
+| Area | SpinIDE Simulator | FV-1 Hardware |
+|---|---|---|
+| **Sample rate** | 32,000 Hz | 32,768 Hz — reverb/delay timing will be slightly different on hardware |
+| **Delay RAM** | Int32Array (JavaScript integer) | 24-bit fixed-point with limited resolution |
+| **LOG/EXP** | Approximate 4-bit shift convention | Hardware lookup table — may differ in extreme input ranges |
+| **Fixed-point math** | JavaScript Float64 emulating S1.23 | True 24-bit integer arithmetic — minor rounding differences possible |
+
+These deviations are imperceptible for most effects. If your program sounds correct in SpinIDE, it will almost certainly sound correct on hardware.
