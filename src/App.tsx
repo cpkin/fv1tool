@@ -227,6 +227,9 @@ function App() {
               <div className="llm-guide-example">
                 <code>"Write a plate reverb with POT0 controlling decay time (0.2s to 5s), POT1 controlling pre-delay, and POT2 as a tone knob that rolls off highs. Keep it lush but not muddy."</code>
               </div>
+              <ol start={3}>
+                <li><strong>Expect iteration.</strong> It will likely take multiple attempts for the LLM to produce a usable effect. When you get results back, look for lines marked <code>; TWEAK:</code> in the code — these are the values the LLM suggests you adjust to dial in the sound. Paste any errors from SpinIDE back into the LLM conversation to help it fix issues.</li>
+              </ol>
             </div>
           )}
         </div>

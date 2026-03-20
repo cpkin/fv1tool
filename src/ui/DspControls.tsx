@@ -351,7 +351,7 @@ export default function DspControls() {
       )}
       <p className="dsp-hint">
         {knobMode === 'live'
-          ? `Live mode: Auto-renders ${LIVE_PREVIEW_SECONDS}s preview on change`
+          ? `Live mode: Auto-renders ${LIVE_PREVIEW_SECONDS}s preview on change. Click Render to hear the full audio file.`
           : 'Manual mode: Click render to hear changes'}
       </p>
     </div>
