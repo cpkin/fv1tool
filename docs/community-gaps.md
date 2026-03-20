@@ -181,14 +181,6 @@ Primary use case! Validate .spn code (from any source: SpinCAD export, AI genera
 
 ---
 
-## Next Steps
-
-1. **Phase 0:** Lock SpinASM dialect spec and metadata schema v1
-2. **Phase 1 MVP:** Build validator + simulator with audio rendering
-3. **Community validation:** Share early builds on forums for feedback
-4. **Phase 2+:** Iterate based on real-world usage patterns
-
----
 
 *Research completed: 2026-01-22*  
 *Forums: diystompboxes.com, PedalPCB*  
