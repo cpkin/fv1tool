@@ -1,22 +1,86 @@
 # FV-1 Development Guide
 
-This is the canonical reference for developing FV-1 SpinASM programs, intended for use by human developers and AI agents alike. It covers the instruction set, memory model, fixed-point math, LFO/CHO behavior, file format requirements, metadata schema, and production-tested DSP patterns drawn from analysis of 100+ real-world FV-1 programs.
+This is the canonical reference for developing FV-1 SpinASM programs, intended for use by AI agents generating code on behalf of users. It covers the instruction set, memory model, fixed-point math, LFO/CHO behavior, metadata schema, and production-tested DSP patterns drawn from analysis of 100+ real-world FV-1 programs.
 
 ---
 
-## 1. The FV-1 Chip — Overview
+## 1. Rules for Code Generation
 
-The **Spin Semiconductor FV-1** is an 8-program DSP chip for audio effects (reverb, delay, chorus, etc.). It is widely used in guitar pedal DIY builds.
+When generating SpinASM code, you MUST follow these rules:
 
-Key hardware facts:
-- **Sample rate:** 32,768 Hz (fixed, not configurable)
-- **Program memory:** 128 instruction slots per program, 8 programs total per EEPROM
-- **Delay RAM:** 32,768 samples shared across the program (~1.0 seconds total)
-- **Potentiometers:** 3 external pots (POT0, POT1, POT2), read once per 32-sample block
-- **Registers:** 32 general-purpose registers (REG0–REG31) plus named special registers
-- **Accumulators:** ACC (current accumulator), PACC (previous accumulator), LR (left-right crossfade register)
-- **Audio I/O:** ADCL (left input), ADCR (right input), DACL (left output), DACR (right output)
-- **LFOs:** 2 sine (SIN0, SIN1) + 2 ramp (RMP0, RMP1) — hardware-generated, zero instruction cost per sample
+### 1.1 Output Format
+
+- Always produce a **single, complete, runnable `.spn` program** — never code fragments or partial files
+- Always include the **`;@fx` metadata block** at the top (see Section 13) so the program works with SpinIDE's signal path diagram, pot labels, and UI features
+- Always follow the **program structure order** from Section 2 (metadata, header, MEM, EQU, init, pots, input, processing, output)
+- Use the **skeleton template in Section 15** as your starting point for every program
+
+### 1.2 Commenting Policy (Critical)
+
+Assume the user has **zero SpinASM background**. They are likely a guitar pedal builder or musician, not a DSP engineer. Every program you generate must be understandable by someone who has never seen assembly language before.
+
+**Required comments:**
+
+1. **Section headers** — mark every logical section with a clear banner comment:
+   ```asm
+   ; ===== DELAY MEMORY =====
+   ; ===== KNOB READING =====
+   ; ===== INPUT STAGE =====
+   ; ===== CORE EFFECT (chorus processing) =====
+   ; ===== WET/DRY MIX & OUTPUT =====
+   ```
+
+2. **Every tweakable value** — any constant the user might want to change must have a comment explaining what it controls, what range is safe, and what changing it does sonically:
+   ```asm
+   EQU krt    0.55       ; TWEAK: reverb decay time (0.3=short, 0.7=long, 0.95=near-infinite — keep below 1.0!)
+   EQU kap    0.6        ; TWEAK: diffusion amount (0.4=sparse, 0.7=dense — higher = lusher but risks ringing)
+   EQU krf    0.4        ; TWEAK: damping tone (0.1=very dark, 0.5=bright — controls high-freq decay)
+   ```
+
+3. **Every non-obvious instruction** — explain what the instruction does in plain English, not just what the mnemonic stands for:
+   ```asm
+   rdfx lp1, krf         ; lowpass filter: smooths out high frequencies (like turning down a tone knob)
+   wrlx lp1, krs         ; apply the damping shelf — highs decay faster than lows, like a real room
+   ```
+
+4. **Why, not just what** — explain the musical/sonic purpose, not just the math:
+   ```asm
+   sof  0.8, 0.1         ; scale pot range to 0.1–0.9 (avoids fully-off and prevents runaway feedback)
+   rdax ADCL, 0.5        ; read left input at half volume (leaves headroom so mixing won't clip)
+   ```
+
+5. **Pot descriptions** — in the header, clearly describe what each knob does in user terms:
+   ```asm
+   ; POT0 (Knob 1) = Decay Time — turn right for longer reverb tail
+   ; POT1 (Knob 2) = Tone — turn right for brighter sound
+   ; POT2 (Knob 3) = Mix — full left = dry only, full right = wet only
+   ```
+
+### 1.3 Validation Before Presenting Code
+
+Before presenting your program to the user, mentally verify:
+- Total instruction count is **<= 128** (count every instruction line, excluding comments, directives, and labels)
+- Total delay RAM across all `MEM` declarations is **<= 32,768 samples**
+- Every program has a `skp RUN, label` initialization guard
+- Every program writes to at least `DACL` (and `DACR` for stereo output)
+- Feedback coefficients are **< 1.0** (to prevent runaway oscillation)
+- The `;@fx` metadata `memory` entries match the actual `MEM` declarations
+
+If the user's request would exceed 128 instructions, simplify the design and explain what tradeoffs you made. Do not silently exceed the limit.
+
+### 1.4 Common LLM Mistakes to Avoid
+
+These are errors that AI models frequently make when generating SpinASM code:
+
+- **Forgetting the `skp RUN` init guard** — without it, LFOs and registers re-initialize every sample, causing silence or noise
+- **Feedback coefficient >= 1.0** — causes instant clipping/oscillation. Always cap feedback below 1.0 (e.g., `sof 0.9, 0.0`)
+- **Forgetting to write to DACL/DACR** — the program runs but produces silence
+- **Exceeding 128 instructions** — the assembler rejects the program. Count carefully for complex effects
+- **Exceeding 32,768 delay samples** — corrupts all delay memory. Add up all `MEM` sizes
+- **Using backward jumps** — SKP and JMP can only jump **forward**. Labels must come after the skip instruction
+- **Using `rdax` when `ldax` is needed** — `rdax` *adds* to ACC, `ldax` *replaces* ACC. Mixing these up corrupts signal levels
+- **Forgetting to clear ACC** — use `wrax REG, 0` (the 0 clears ACC) or `clr` before starting a new calculation chain
+- **Not attenuating when summing inputs** — `rdax ADCL, 1.0` + `rdax ADCR, 1.0` can clip. Use 0.5 coefficients for mono summing
 
 ---
 
@@ -67,36 +131,9 @@ wrax DACR, 0.0        ; write right output, clear ACC
 
 ---
 
-## 3. Critical File Format Requirement — CRLF Line Endings
+## 3. File Format Note — CRLF Line Endings
 
-**SpinASM (the official Windows assembler) requires CRLF line endings (`\r\n`) in all `.spn` source files.**
-
-SpinASM only runs on Windows and uses Windows-style line endings. Files with Unix LF-only (`\n`) line endings will either fail to parse or produce incorrect output.
-
-### What CRLF means
-
-- **CRLF** = Carriage Return + Line Feed = two bytes: `\r\n` (hex `0D 0A`) — Windows standard
-- **LF** = Line Feed only = one byte: `\n` (hex `0A`) — Unix/Linux/macOS standard
-
-### How to convert
-
-```bash
-# Convert LF → CRLF using sed (safe, in-place)
-sed -i 's/$/\r/' yourfile.spn
-
-# Or using unix2dos (if available)
-unix2dos yourfile.spn
-
-# Verify line endings are CRLF
-file yourfile.spn
-# Expected: "ASCII text, with CRLF line terminators"
-```
-
-### Rule for agents and code generators
-
-> **Any tool, script, or AI agent that writes `.spn` files must either produce CRLF line endings natively, or include a conversion step before the file is used with SpinASM.**
-
-Note: The SpinIDE simulator accepts both LF and CRLF. CRLF is only required when using the official SpinASM assembler on Windows.
+**SpinASM (the official Windows assembler) requires CRLF line endings (`\r\n`).** The SpinIDE simulator accepts both LF and CRLF, so this only matters when exporting to the hardware assembler. If the user needs to compile for hardware, they should convert with `unix2dos yourfile.spn`.
 
 ---
 
@@ -107,7 +144,6 @@ Note: The SpinIDE simulator accepts both LF and CRLF. CRLF is only required when
 - **Case-insensitive:** `RDAX`, `rdax`, and `Rdax` are all valid
 - **Comments:** semicolon (`;`) starts a comment and runs to end of line
 - **Whitespace:** spaces and tabs are interchangeable; multiple whitespace collapses to a single separator
-- **Line endings:** both LF and CRLF accepted by SpinIDE; CRLF **required** by SpinASM (see Section 3)
 - **Operand separators:** commas separate operands
 - **Jump target labels:** identified by a trailing colon (e.g., `start:`)
 - **Binary literals:** `%` prefix (e.g., `%01100000_00000000_00000000`), underscores optional for readability
@@ -276,13 +312,13 @@ The FV-1 uses **S1.23 fixed-point arithmetic** for all audio operations.
 
 ### Saturation and Overflow
 
-- Most arithmetic operations **saturate** at the ±1.0 limit (no wraparound)
+- Most arithmetic operations **saturate** at the +/-1.0 limit (no wraparound)
 - Some bit operations treat the value as a raw integer (AND, OR, XOR, NOT)
 - When in doubt, protect against overflow with `sof 1.0, 0` to clamp or attenuate input
 
 ### Gain Staging (Critical)
 
-Gain staging is the single most important practical concern in FV-1 programming. Because the accumulator saturates at ±1.0, you must carefully manage signal levels throughout the processing chain:
+Gain staging is the single most important practical concern in FV-1 programming. Because the accumulator saturates at +/-1.0, you must carefully manage signal levels throughout the processing chain:
 
 - **Attenuate early, amplify late.** Sum inputs at reduced levels (e.g., `rdax ADCL, 0.5`) to leave headroom for processing.
 - **Feedback loops must attenuate.** Any feedback path multiplied by 1.0 or higher will clip within a few samples. Use coefficients like 0.5–0.9.
@@ -292,7 +328,7 @@ Gain staging is the single most important practical concern in FV-1 programming.
 
 ### Practical Tips
 
-- Audio inputs from ADC are already normalized to ±1.0
+- Audio inputs from ADC are already normalized to +/-1.0
 - Use `sof` to apply a gain factor: `sof 0.5, 0.0` halves the signal
 - Use `log`/`exp` for compression/expansion effects (log domain processing)
 - Invert a signal: `sof -1.0, 0.0`
@@ -775,7 +811,7 @@ rdax REG1, 1.0        ; add wet component
 wrax DACL, 0.0
 ```
 
-#### Difference method (more efficient, 1 fewer instruction)
+#### Difference method (more efficient, 1 fewer instruction — prefer this)
 
 ```asm
 ; Equivalent to above but uses subtraction trick
@@ -838,7 +874,7 @@ Convert a ramp LFO to triangle wave (useful for tremolo, flanger):
 ```asm
 cho  RDAL, RMP0        ; read ramp value into ACC (0 to 1 sawtooth)
 sof  1.0, -0.25        ; offset to center
-absa                   ; fold negative half → triangle wave
+absa                   ; fold negative half -> triangle wave
 wrax tri, 0            ; store triangle (0 to 0.5 range)
 ```
 
@@ -914,32 +950,9 @@ Metadata is embedded as structured comments at the top of the file:
 
 ---
 
-## 14. Simulation Fidelity Notes
+## 14. Quick Reference Card
 
-The SpinIDE simulator targets **gross correctness** — it is designed to catch functional bugs before hardware testing, not to produce bit-accurate hardware output.
-
-**What the simulator matches:**
-- Instruction semantics (ACC/PACC/LR behavior per opcode)
-- Fixed-point math (S1.23 scaling, saturation rules)
-- Delay memory (32,768-sample circular buffer with correct wrapping)
-- Resource limits (instruction count, delay RAM, register allocation)
-- Block timing (32-sample blocks, pot updates at block boundaries)
-
-**Acceptable deviations:**
-- Minor floating-point precision differences (no perceptible effect on audio)
-- LFO phase alignment may differ slightly from hardware
-- CHO interpolation may differ from exact hardware behavior
-- Input resampling from non-32kHz sources introduces minor artifacts
-
-**If the simulator output sounds wrong:**
-- Check for silent output (zero output is usually a missing `wrax DACL` instruction)
-- Check for clipping/overflow (reduce input gain or add `sof 0.7, 0.0` attenuation)
-- Check delay RAM total (exceeding 32,768 samples corrupts audio)
-- Verify I/O mode matches your audio source (stereo file + mono_mono mode only uses left channel)
-
----
-
-## 15. Quick Reference Card
+Always use this skeleton as the starting point for new programs:
 
 ```asm
 ; --- Boilerplate skeleton for a mono-in stereo-out effect ---
@@ -951,86 +964,68 @@ The SpinIDE simulator targets **gross correctness** — it is designed to catch 
 ;@fx   "graph": {"nodes":["in","proc","out"],"edges":[{"from":"in","to":"proc"},{"from":"proc","to":"out"}]} }
 
 ; My Effect
-; POT0 = Param1    POT1 = Param2    POT2 = Mix
+; POT0 (Knob 1) = Param1 — describe what this knob does
+; POT1 (Knob 2) = Param2 — describe what this knob does
+; POT2 (Knob 3) = Mix — full left = dry only, full right = wet only
 
-MEM buf 8192
+; ===== DELAY MEMORY =====
+MEM buf 8192           ; main effect buffer (~0.25 seconds)
+
+; ===== REGISTERS & CONSTANTS =====
 EQU param1  POT0
 EQU param2  POT1
 EQU mix     POT2
-EQU mono    REG0
-EQU wet     REG1
-EQU temp    REG2
+EQU mono    REG0       ; mono input sum
+EQU wet     REG1       ; processed (wet) signal
+EQU temp    REG2       ; scratch register
 
-; --- Init (runs once) ---
+; ===== INITIALIZATION (runs once at power-on) =====
 skp RUN, main
 clr
 wra buf, 0.0
 
 main:
-; --- Read input (sum to mono) ---
-rdax ADCL, 0.5
-rdax ADCR, 0.5
-wrax mono, 0
+; ===== READ KNOBS =====
+; (read and scale pot values here)
 
-; --- Process ---
+; ===== READ INPUT (sum to mono) =====
+rdax ADCL, 0.5        ; read left input at half volume (leaves headroom)
+rdax ADCR, 0.5        ; add right input at half volume
+wrax mono, 0          ; store mono sum, clear ACC
+
+; ===== CORE EFFECT PROCESSING =====
 ldax mono
-wra buf, 0.0
-rda buf#, 1.0
-wrax wet, 0.0
+wra buf, 0.0          ; write input to delay buffer
+rda buf#, 1.0         ; read oldest sample from buffer
+wrax wet, 0.0         ; store wet signal
 
-; --- Mix and output ---
-ldax mono              ; dry signal
-sof  -1.0, 0.0        ; negate
-rdax wet, 1.0          ; ACC = wet - dry
-mulx mix               ; ACC = mix * (wet - dry)
-rdax mono, 1.0         ; ACC = dry + mix*(wet-dry)
-wrax DACL, 1.0         ; left output (keep in ACC)
-wrax DACR, 0.0         ; right output
+; ===== WET/DRY MIX & OUTPUT =====
+rdax mono, -1.0       ; ACC = -dry (start of difference mix)
+rdax wet, 1.0         ; ACC = wet - dry
+mulx mix              ; ACC = mix * (wet - dry)
+rdax mono, 1.0        ; ACC = dry + mix*(wet-dry)
+wrax DACL, 1.0        ; left output (keep in ACC)
+wrax DACR, 0.0        ; right output (clear ACC)
 ```
 
 ---
 
-## 16. Effect Recipe Index
+## 15. Effect Recipe Index
 
-Quick reference for common effects and the patterns they combine. Use these as starting points:
+Quick reference for common effects and the patterns they combine:
 
-| Effect | Key Patterns | Typical Instruction Count |
+| Effect | Key Patterns (see Section 11) | Typical Instructions |
 |---|---|---|
-| **Simple Delay** | MEM + wra/rda + feedback + mix | 15–25 |
-| **Ping-Pong Delay** | 2 delay lines, cross-feed L↔R | 25–40 |
-| **Chorus** | SIN LFO + CHO RDA (dual-tap interpolation) | 15–25 |
-| **Flanger** | Short delay + SIN LFO + feedback + mix | 20–35 |
-| **Plate Reverb** | 3–4 allpass diffusers + 4-stage ring + shelving EQ | 80–120 |
+| **Simple Delay** | 11.7 Feedback Delay + 11.9 Wet/Dry Mix | 15–25 |
+| **Ping-Pong Delay** | 2x 11.7 with cross-feed L/R | 25–40 |
+| **Chorus** | 8.4 Chorus Pattern + 11.9 Mix | 15–25 |
+| **Flanger** | Short delay + 8.4 Chorus + feedback + 11.9 Mix | 20–35 |
+| **Plate Reverb** | 11.4 Allpass Bank + 11.6 Reverb Tank + 11.5 Shelving | 80–120 |
 | **Spring Reverb** | Cascaded chirp allpasses (6–37 stages) | 90–128 |
-| **Shimmer** | Reverb tank + RMP pitch shift (octave up) feeding back | 100–128 |
-| **Tremolo** | SIN/RMP LFO → multiply signal amplitude | 10–20 |
-| **Phaser** | Cascaded allpass filters with LFO-swept coefficients | 40–70 |
-| **Pitch Shift** | RMP LFO + CHO RDA/RPTR2 crossfade | 20–35 |
-| **Overdrive** | log/exp soft clip + tone filter | 25–40 |
-| **Auto-Wah** | Envelope detection + state-variable filter | 30–50 |
-| **Compressor** | Envelope detection + log/exp gain control | 30–50 |
-
----
-
-## 17. Reference Sources and Acknowledgments
-
-### Primary References
-
-- **SPINAsm User Manual** (canonical): `http://www.spinsemi.com/Products/datasheets/spn1001-dev/SPINAsmUserManual.pdf`
-- **asfv1 assembler** (cross-platform Python assembler, compatible behavior): `https://github.com/ndf-zz/asfv1`
-- **SpinCAD Designer** (visual block editor, good for learning): `https://github.com/HolyCityAudio/SpinCAD-Designer`
-
-### Community Program Collections
-
-The patterns and conventions documented in this guide were informed by analysis of programs from these community repositories:
-
-- **Audiofab FV-1 VS Code Extension** — Professional VS Code extension with visual block programming, simulator, and hardware deployment for the FV-1. Includes reference implementations of reverb, delay, chorus, pitch shift, and shelving filter patterns. MIT License.
-  `https://github.com/audiofab/fv1-vscode`
-
-- **mstratman/fv1-programs** — Community-curated directory of 85+ FV-1 programs by authors including Spin Semi, Digital Larry (Holy City Audio), Don Stavely, David Rolo, Alex Lawrow, and many others. Covers reverbs, delays, modulation, pitch shifting, distortion, and utility effects.
-  `https://github.com/mstratman/fv1-programs`
-
-### SpinIDE
-
-- **SpinIDE** (this project): Web-based SpinASM IDE with compiler, FV-1 simulator, oscilloscope, FFT spectrum, delay memory visualization, and signal path diagrams.
-  `https://github.com/claypipkin/SpinIDE`
+| **Shimmer** | 11.6 Reverb Tank + 8.5 Pitch Shift (octave up) in feedback | 100–128 |
+| **Tremolo** | 8.2 LFO + multiply signal amplitude | 10–20 |
+| **Phaser** | Cascaded allpasses with LFO-swept coefficients | 40–70 |
+| **Pitch Shift** | 8.5 Pitch Shifting Pattern | 20–35 |
+| **Overdrive** | 11.11 Soft Clipping + tone filter | 25–40 |
+| **Auto-Wah** | 11.10 Envelope Detection + state-variable filter | 30–50 |
+| **Compressor** | 11.10 Envelope Detection + log/exp gain control | 30–50 |
