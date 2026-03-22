@@ -18,6 +18,7 @@ import { buildCytoscapeElements } from './utils/graphBuilder'
 import { useDebugStore } from './store/debugStore'
 import { mstratmanExamples, MSTRATMAN_REPO_URL } from './utils/mstratmanExamples'
 import { downloadText } from './utils/exportWAV'
+import SideDrawer from './ui/SideDrawer'
 
 function App() {
   const source = useValidationStore((state) => state.source)
@@ -35,7 +36,7 @@ function App() {
   const [manifestCopied, setManifestCopied] = useState(false)
   const [guideExpanded, setGuideExpanded] = useState(false)
   const [userGuideExpanded, setUserGuideExpanded] = useState(false)
-  const [roadmapExpanded, setRoadmapExpanded] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   const {
     enabled: debugEnabled,
@@ -151,14 +152,24 @@ function App() {
             <p className="app-eyebrow">FV1Tool</p>
             <h1>FV-1 SpinASM IDE</h1>
           </div>
-          <button
-            type="button"
-            className="toolbar-btn"
-            onClick={() => setDarkMode(!darkMode)}
-            title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            {darkMode ? 'Light Mode' : 'Dark Mode'}
-          </button>
+          <div className="header-actions">
+            <button
+              type="button"
+              className="toolbar-btn"
+              onClick={() => setDarkMode(!darkMode)}
+              title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {darkMode ? 'Light Mode' : 'Dark Mode'}
+            </button>
+            <button
+              type="button"
+              className="toolbar-btn hamburger-btn"
+              onClick={() => setDrawerOpen(true)}
+              title="Menu"
+            >
+              ☰
+            </button>
+          </div>
         </header>
 
         {urlStateMessage && (
@@ -235,35 +246,7 @@ function App() {
           )}
         </div>
 
-        <div className="llm-guide">
-          <button
-            type="button"
-            className="llm-guide-toggle"
-            onClick={() => setRoadmapExpanded(!roadmapExpanded)}
-          >
-            <span>Roadmap</span>
-            <span>{roadmapExpanded ? '▼' : '▶'}</span>
-          </button>
-          {roadmapExpanded && (
-            <div className="llm-guide-body">
-              <p>Planned features and improvements for FV1Tool:</p>
-              <ul className="roadmap-list">
-                <li className="roadmap-item">
-                  <span className="roadmap-status roadmap-planned">Planned</span>
-                  <span>More guitar recording samples across various styles and pickup types</span>
-                </li>
-                <li className="roadmap-item">
-                  <span className="roadmap-status roadmap-planned">Planned</span>
-                  <span>Signal path diagram visualization</span>
-                </li>
-                <li className="roadmap-item">
-                  <span className="roadmap-status roadmap-planned">Planned</span>
-                  <span>Shareable URLs — link directly to a program to share effects with others</span>
-                </li>
-              </ul>
-            </div>
-          )}
-        </div>
+        <SideDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
 
         {/* Main content: viz LEFT, editor RIGHT */}
         <main className="app-main">
