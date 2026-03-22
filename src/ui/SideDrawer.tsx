@@ -82,22 +82,24 @@ export default function SideDrawer({ isOpen, onClose }: SideDrawerProps) {
           <section className="drawer-section">
             <h3 className="drawer-section-title">About / Contact</h3>
             <div className="drawer-about-row">
-              {avatarError ? (
-                <div className="drawer-avatar-fallback">CP</div>
-              ) : (
-                <img
-                  className="drawer-avatar"
-                  src="https://avatars.githubusercontent.com/cpkin"
-                  alt="cpkin"
-                  width={32}
-                  height={32}
-                  onError={() => setAvatarError(true)}
-                />
-              )}
-              <div className="drawer-about-text">
-                <span className="drawer-about-name">cpkin</span>
-                <span className="drawer-about-url">github.com/cpkin</span>
-              </div>
+              <a href="https://github.com/cpkin" target="_blank" rel="noopener noreferrer" className="drawer-about-link">
+                {avatarError ? (
+                  <div className="drawer-avatar-fallback">CP</div>
+                ) : (
+                  <img
+                    className="drawer-avatar"
+                    src="https://avatars.githubusercontent.com/cpkin"
+                    alt="cpkin"
+                    width={32}
+                    height={32}
+                    onError={() => setAvatarError(true)}
+                  />
+                )}
+                <div className="drawer-about-text">
+                  <span className="drawer-about-name">cpkin</span>
+                  <span className="drawer-about-url">github.com/cpkin</span>
+                </div>
+              </a>
               <a
                 className="drawer-about-pill"
                 href="https://github.com/cpkin/fv1tool"

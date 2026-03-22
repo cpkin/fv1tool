@@ -1136,6 +1136,11 @@ body {
 .drawer-about-row {
   display: flex; align-items: center; gap: 10px;
 }
+.drawer-about-link {
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none; min-width: 0;
+}
+.drawer-about-link:hover .drawer-about-name { color: var(--accent); }
 .drawer-avatar {
   width: 32px; height: 32px; border-radius: 50%;
   border: 1px solid var(--border); flex-shrink: 0;
