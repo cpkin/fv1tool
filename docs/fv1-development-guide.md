@@ -4,9 +4,9 @@ This is the canonical reference for developing FV-1 SpinASM programs, intended f
 
 **Before generating any code, study these gold-standard example programs.** Your output should match their style, structure, and comment density:
 
-- **[Ping-Pong Delay](https://raw.githubusercontent.com/cpkin/SpinIDE/main/docs/examples/gold-pingpong-delay.spn)** — stereo bouncing delay with pot smoothing, variable delay time, and crossfeed feedback
-- **[Dattorro Plate Reverb](https://raw.githubusercontent.com/cpkin/SpinIDE/main/docs/examples/gold-dattorro-reverb.spn)** — full Dattorro algorithm with input diffusion, LFO-modulated tank, damping, and multi-tap stereo output
-- **[Dual-Rate Chorus](https://raw.githubusercontent.com/cpkin/SpinIDE/main/docs/examples/gold-dual-chorus.spn)** — thick 8-voice chorus using two independent LFOs with sin/cos/inverted phase taps
+- **[Ping-Pong Delay](https://raw.githubusercontent.com/cpkin/fv1tool/main/docs/examples/gold-pingpong-delay.spn)** — stereo bouncing delay with pot smoothing, variable delay time, and crossfeed feedback
+- **[Dattorro Plate Reverb](https://raw.githubusercontent.com/cpkin/fv1tool/main/docs/examples/gold-dattorro-reverb.spn)** — full Dattorro algorithm with input diffusion, LFO-modulated tank, damping, and multi-tap stereo output
+- **[Dual-Rate Chorus](https://raw.githubusercontent.com/cpkin/fv1tool/main/docs/examples/gold-dual-chorus.spn)** — thick 8-voice chorus using two independent LFOs with sin/cos/inverted phase taps
 
 These examples are adapted from the [mstratman/fv1-programs](https://github.com/mstratman/fv1-programs) community collection and enhanced with the commenting and metadata standards described below.
 
@@ -33,7 +33,7 @@ For example, if the user asks for a plate reverb, fetch `dattorro.spn`. If they 
 - Present code in a **single fenced code block** (` ```asm `) so the user can copy-paste the entire program in one action. Never split the program across multiple code blocks
 - Always follow the **program structure order** from Section 2 (header, MEM, EQU, init, pots, input, processing, output)
 - Use the **skeleton template in Section 14** as your starting point for every program
-- Always include a **`;@fx` signal path metadata block at the end of the file** (after all code). This powers SpinIDE's signal path diagram. See Section 13 for the format
+- Always include a **`;@fx` signal path metadata block at the end of the file** (after all code). This powers FV1Tool's signal path diagram. See Section 13 for the format
 
 ### 1.3 Pot Behavior Visualization (Required)
 
@@ -185,7 +185,7 @@ wrax DACR, 0.0        ; write right output, clear ACC
 
 ## 3. File Format Note — CRLF Line Endings
 
-**SpinASM (the official Windows assembler) requires CRLF line endings (`\r\n`).** The SpinIDE simulator accepts both LF and CRLF, so this only matters when exporting to the hardware assembler. If the user needs to compile for hardware, they should convert with `unix2dos yourfile.spn`.
+**SpinASM (the official Windows assembler) requires CRLF line endings (`\r\n`).** The FV1Tool simulator accepts both LF and CRLF, so this only matters when exporting to the hardware assembler. If the user needs to compile for hardware, they should convert with `unix2dos yourfile.spn`.
 
 ---
 
@@ -934,7 +934,7 @@ wrax tri, 0            ; store triangle (0 to 0.5 range)
 
 ## 12. Error Handling Policy (SpinASM Behavior)
 
-SpinASM and SpinIDE follow these error handling conventions:
+SpinASM and FV1Tool follow these error handling conventions:
 
 | Condition | Behavior |
 |---|---|
@@ -945,13 +945,13 @@ SpinASM and SpinIDE follow these error handling conventions:
 | Instruction count > 128 | Error (assembler halts) |
 | Delay RAM total > 32768 | Error (assembler halts) |
 
-When iterating with an AI tool, use the "Copy errors" feature in SpinIDE to paste all errors and warnings into the AI prompt in one click.
+When iterating with an AI tool, use the "Copy errors" feature in FV1Tool to paste all errors and warnings into the AI prompt in one click.
 
 ---
 
 ## 13. Signal Path Metadata (`;@fx` Block)
 
-Always include a signal path metadata block **at the end of the file**, after all code. This powers SpinIDE's signal path diagram visualization. The block is embedded as comments so the assembler ignores it.
+Always include a signal path metadata block **at the end of the file**, after all code. This powers FV1Tool's signal path diagram visualization. The block is embedded as comments so the assembler ignores it.
 
 **Format:**
 
@@ -1050,7 +1050,7 @@ rdax mono, 1.0        ; ACC = dry + mix*(wet-dry)
 wrax DACL, 1.0        ; left output (keep in ACC)
 wrax DACR, 0.0        ; right output (clear ACC)
 
-; ===== SIGNAL PATH METADATA (for SpinIDE visualization) =====
+; ===== SIGNAL PATH METADATA (for FV1Tool visualization) =====
 ;@fx v1
 ;@fx { "version": "v1", "effectName": "My Effect", "io": "mono_stereo",
 ;@fx   "pots": [{"id":"pot0","label":"Param1"},{"id":"pot1","label":"Param2"},{"id":"pot2","label":"Mix"}],

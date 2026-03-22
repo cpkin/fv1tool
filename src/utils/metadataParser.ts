@@ -1,5 +1,5 @@
 /**
- * Metadata extraction utilities for SpinIDE
+ * Metadata extraction utilities for FV1Tool
  * Parses ;@fx headers from SpinASM source code
  */
 

@@ -1,14 +1,14 @@
-# SpinIDE
+# FV1Tool
 
 **Browser-based IDE for the Spin Semiconductor FV-1 DSP chip.** Write SpinASM code, simulate the effect, and hear the result.
 
-**Live:** [spinide.vercel.app](https://spinide.vercel.app)
+**Live:** [fv1tool.vercel.app](https://fv1tool.vercel.app)
 
 ---
 
 ## What It Does
 
-SpinIDE compiles and simulates FV-1 SpinASM programs in the browser. Load audio, write or paste your effect code, click Render, and listen to the output. Adjust POT0–POT2 and hear changes in real time.
+FV1Tool compiles and simulates FV-1 SpinASM programs in the browser. Load audio, write or paste your effect code, click Render, and listen to the output. Adjust POT0–POT2 and hear changes in real time.
 
 - **SpinASM compiler** with real-time diagnostics and resource meters
 - **FV-1 simulator** — 32,768 Hz fixed-point execution with delay RAM, LFOs, and CHO
@@ -31,13 +31,13 @@ SpinIDE compiles and simulates FV-1 SpinASM programs in the browser. Load audio,
 
 ## Using an LLM to Write Effects
 
-SpinIDE includes a built-in FV-1 development guide that you can feed to any LLM:
+FV1Tool includes a built-in FV-1 development guide that you can feed to any LLM:
 
 1. Expand the **FV-1 LLM Usage Guide** in the app
 2. Click **Copy Guide Prompt**
 3. Paste into Claude, ChatGPT, or any LLM
 4. Describe the effect you want — the LLM will generate valid SpinASM code
-5. Paste the output into SpinIDE and render
+5. Paste the output into FV1Tool and render
 
 The guide covers the full FV-1 architecture, instruction set, delay RAM, LFOs, fixed-point math, and common patterns like reverb tanks, allpass filters, pitch shifting, and shelving EQ.
 

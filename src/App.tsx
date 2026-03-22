@@ -116,13 +116,13 @@ function App() {
   // Download .spn
   const handleDownloadSpn = () => {
     if (!hasSource) return
-    downloadText(source, 'spinide-program.spn', 'text/plain')
+    downloadText(source, 'fv1tool-program.spn', 'text/plain')
   }
 
   // LLM manifest copy
   const handleCopyManifest = async () => {
     try {
-      const manifestUrl = 'https://raw.githubusercontent.com/cpkin/SpinIDE/main/docs/fv1-development-guide.md'
+      const manifestUrl = 'https://raw.githubusercontent.com/cpkin/fv1tool/main/docs/fv1-development-guide.md'
       const prompt = `Please read and internalize the FV-1 SpinASM development guide at:\n${manifestUrl}\n\nThis guide covers the FV-1 DSP architecture, SpinASM instruction set, delay RAM, LFOs, and programming patterns. Use it as reference when helping me write FV-1 programs.`
       await navigator.clipboard.writeText(prompt)
       setManifestCopied(true)
@@ -130,7 +130,7 @@ function App() {
     } catch {
       // Fallback: try to copy just the URL
       try {
-        await navigator.clipboard.writeText('https://raw.githubusercontent.com/cpkin/SpinIDE/main/docs/fv1-development-guide.md')
+        await navigator.clipboard.writeText('https://raw.githubusercontent.com/cpkin/fv1tool/main/docs/fv1-development-guide.md')
         setManifestCopied(true)
         setTimeout(() => setManifestCopied(false), 3000)
       } catch {
@@ -148,7 +148,7 @@ function App() {
         {/* Compact header */}
         <header className="app-header">
           <div>
-            <p className="app-eyebrow">SpinIDE</p>
+            <p className="app-eyebrow">FV1Tool</p>
             <h1>FV-1 SpinASM IDE</h1>
           </div>
           <button
@@ -180,7 +180,7 @@ function App() {
           </button>
           {userGuideExpanded && (
             <div className="llm-guide-body">
-              <p><strong>SpinIDE</strong> is a browser-based IDE for the Spin Semiconductor FV-1 DSP chip. Write SpinASM code, simulate the effect, and hear the result.</p>
+              <p><strong>FV1Tool</strong> is a browser-based IDE for the Spin Semiconductor FV-1 DSP chip. Write SpinASM code, simulate the effect, and hear the result.</p>
               <ol>
                 <li><strong>Load audio</strong> — Pick a demo clip from the <em>Demo</em> dropdown, or click <em>Upload .wav</em> to use your own audio. The IDE auto-detects mono/stereo input.</li>
                 <li><strong>Write or paste code</strong> — Use an LLM (check out the LLM Usage Guide) to come up with an effect or drop a <code>.spn</code> file into the editor. Or pick an example from the <em>Examples</em> dropdown. Diagnostics update as you type.</li>
@@ -212,7 +212,7 @@ function App() {
                 <li>Copy the prompt below and paste it into your LLM conversation. It asks the LLM to read the FV-1 development guide hosted on GitHub. Most LLMs can fetch and parse this URL directly.</li>
               </ol>
               <div className="llm-guide-prompt-line">
-                <code className="llm-guide-prompt-text">Please read and internalize the FV-1 SpinASM development guide at: https://raw.githubusercontent.com/cpkin/SpinIDE/main/docs/fv1-development-guide.md{'\n\n'}This guide covers the FV-1 DSP architecture, SpinASM instruction set, delay RAM, LFOs, and programming patterns. Use it as reference when helping me write FV-1 programs.</code>
+                <code className="llm-guide-prompt-text">Please read and internalize the FV-1 SpinASM development guide at: https://raw.githubusercontent.com/cpkin/fv1tool/main/docs/fv1-development-guide.md{'\n\n'}This guide covers the FV-1 DSP architecture, SpinASM instruction set, delay RAM, LFOs, and programming patterns. Use it as reference when helping me write FV-1 programs.</code>
                 <button
                   type="button"
                   className={`llm-guide-copy-btn ${manifestCopied ? 'llm-guide-copy-btn-active' : ''}`}
@@ -229,7 +229,7 @@ function App() {
                 <code>"Write a plate reverb with POT0 controlling decay time (0.2s to 5s), POT1 controlling pre-delay, and POT2 as a tone knob that rolls off highs. Keep it lush but not muddy."</code>
               </div>
               <ol start={3}>
-                <li><strong>Expect iteration.</strong> It will likely take multiple attempts for the LLM to produce a usable effect. When you get results back, look for lines marked <code>; TWEAK:</code> in the code — these are the values the LLM suggests you adjust to dial in the sound. Paste any errors from SpinIDE back into the LLM conversation to help it fix issues.</li>
+                <li><strong>Expect iteration.</strong> It will likely take multiple attempts for the LLM to produce a usable effect. When you get results back, look for lines marked <code>; TWEAK:</code> in the code — these are the values the LLM suggests you adjust to dial in the sound. Paste any errors from FV1Tool back into the LLM conversation to help it fix issues.</li>
               </ol>
             </div>
           )}
@@ -246,7 +246,7 @@ function App() {
           </button>
           {roadmapExpanded && (
             <div className="llm-guide-body">
-              <p>Planned features and improvements for SpinIDE:</p>
+              <p>Planned features and improvements for FV1Tool:</p>
               <ul className="roadmap-list">
                 <li className="roadmap-item">
                   <span className="roadmap-status roadmap-planned">Planned</span>

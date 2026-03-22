@@ -2,7 +2,7 @@
 
 ## Overview
 
-SpinIDE metadata headers are structured comments embedded in SpinASM `.spn` files that provide effect documentation, pot labeling, memory allocation details, and signal flow visualization. Metadata is **optional** — the validator and simulator work without it, but diagrams and enhanced UI features require valid metadata.
+FV1Tool metadata headers are structured comments embedded in SpinASM `.spn` files that provide effect documentation, pot labeling, memory allocation details, and signal flow visualization. Metadata is **optional** — the validator and simulator work without it, but diagrams and enhanced UI features require valid metadata.
 
 This document describes **Metadata Schema v1** — the format, rules, and usage for authoring versioned metadata headers.
 
@@ -71,7 +71,7 @@ The schema follows [JSON Schema Draft 2020-12](https://json-schema.org/draft/202
     - `from` (required): String — Source node ID (must exist in `nodes`)
     - `to` (required): String — Destination node ID (must exist in `nodes`)
 
-**Feedback loops:** Edges can create cycles (e.g., delay output → feedback → delay input). SpinIDE marks feedback edges visually in diagrams.
+**Feedback loops:** Edges can create cycles (e.g., delay output → feedback → delay input). FV1Tool marks feedback edges visually in diagrams.
 
 ## Complete Examples
 
@@ -157,7 +157,7 @@ mem delayR 16384
 
 ## Validation Behavior
 
-SpinIDE validates metadata headers using the JSON Schema. Validation outcomes:
+FV1Tool validates metadata headers using the JSON Schema. Validation outcomes:
 
 ### Valid Metadata
 - All required fields present and correctly formatted
@@ -186,7 +186,7 @@ SpinIDE validates metadata headers using the JSON Schema. Validation outcomes:
 - **Match memory allocations:** Ensure `memory` array matches `mem` directives in SpinASM code
 - **Meaningful pot labels:** Use short, descriptive labels (e.g., "Mix" not "pot2 control")
 - **Keep graphs simple:** Diagram complexity increases with node count; aim for 5-10 nodes
-- **Test validation:** Paste metadata into SpinIDE validator before finalizing
+- **Test validation:** Paste metadata into FV1Tool validator before finalizing
 
 ### Common Mistakes
 - **Pot array length:** Must be exactly 3 objects (pot0, pot1, pot2)
@@ -213,7 +213,7 @@ The JSON Schema is the source of truth for validation rules. When authoring meta
 
 **Next Steps:**
 - Use these examples as templates for your own effects
-- Validate metadata in SpinIDE before committing to code
+- Validate metadata in FV1Tool before committing to code
 - Report issues or suggest enhancements via GitHub
 
 *Schema version: v1*  

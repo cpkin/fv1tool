@@ -43,7 +43,7 @@ export class CompilationError extends Error {
  * @param equates - Equate symbol table for resolving symbolic names
  * @returns Register index (0-31) or special register value
  */
-// Hardware register index → SpinIDE compiler index for numeric indices > 31
+// Hardware register index → FV1Tool compiler index for numeric indices > 31
 // SpinCAD outputs raw hardware register addresses (32=ADCL, 33=ADCR, etc.)
 const HARDWARE_REG_MAP: Record<number, number> = {
   20: 32,  // ADCL  (hw 20 → compiler 32)

@@ -1,6 +1,6 @@
-# SpinASM Dialect Specification (SpinIDE)
+# SpinASM Dialect Specification (FV1Tool)
 
-This document locks the SpinASM dialect that SpinIDE will parse and simulate.
+This document locks the SpinASM dialect that FV1Tool will parse and simulate.
 It is anchored to the official SPINAsm User Manual and verified against
 community assembler behavior where the manual is ambiguous.
 

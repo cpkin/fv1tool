@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 
-const MANIFESTO_MODAL_KEY = 'spinide-manifesto-acknowledged'
+const MANIFESTO_MODAL_KEY = 'fv1tool-manifesto-acknowledged'
 
 export default function FidelityModal() {
   const [isOpen, setIsOpen] = useState(false)
@@ -25,7 +25,7 @@ export default function FidelityModal() {
     <div className="modal-overlay" onClick={handleAcknowledge}>
       <div className="modal-content fidelity-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>SpinIDE Manifesto</h2>
+          <h2>FV1Tool Manifesto</h2>
         </div>
 
         <div className="modal-body">

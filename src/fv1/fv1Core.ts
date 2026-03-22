@@ -4,7 +4,7 @@
  * Ported from audiofab/fv1-vscode (MIT License):
  * https://github.com/audiofab/fv1-vscode
  *
- * Key improvements over the previous SpinIDE interpreter:
+ * Key improvements over the previous FV1Tool interpreter:
  * - Float-based quadrature sine LFO (no integer-approximation artifacts)
  * - Correct CHO dual-tap linear interpolation (was single-tap, causing robotic chorus)
  * - COMPA and RPTR2 flags fully implemented
@@ -21,7 +21,7 @@ const MIN_ACC = -1.0;
 const DELAY_MASK = MAX_DELAY_RAM - 1; // 0x7FFF
 
 // ---------------------------------------------------------------------------
-// Register mapping: SpinIDE compiled register indices → internal 64-slot layout
+// Register mapping: FV1Tool compiled register indices → internal 64-slot layout
 //
 // Internal layout (matches audiofab FV1Simulator):
 //   [0]  SIN0_RATE_RAW   [1]  SIN0_RANGE_RAW
@@ -40,7 +40,7 @@ const REG_MAP = new Uint8Array(64);
 for (let i = 0; i < 64; i++) REG_MAP[i] = i;
 // REG0-31 → slots 32-63
 for (let i = 0; i < 32; i++) REG_MAP[i] = i + 32;
-// ADDR_PTR (SpinIDE index 24) → stays at internal 24
+// ADDR_PTR (FV1Tool index 24) → stays at internal 24
 REG_MAP[24] = 24;
 // Special registers
 REG_MAP[32] = 20; // ADCL
@@ -64,11 +64,11 @@ REG_MAP[48] = 5;  // RMP0_RANGE
 REG_MAP[49] = 6;  // RMP1_RATE
 REG_MAP[50] = 7;  // RMP1_RANGE
 
-// Inverse register map: audiofab internal index → SpinIDE compiler index.
+// Inverse register map: audiofab internal index → FV1Tool compiler index.
 // Used by decodeRawWord so that re-dispatched instructions go through REG_MAP correctly.
 const INV_REG_MAP = new Uint8Array(64);
 for (let i = 0; i < 64; i++) INV_REG_MAP[i] = i; // default identity
-// Internal 32-63 → SpinIDE 0-31 (REG0-REG31)
+// Internal 32-63 → FV1Tool 0-31 (REG0-REG31)
 for (let i = 0; i < 32; i++) INV_REG_MAP[i + 32] = i;
 INV_REG_MAP[24] = 24; // ADDR_PTR stays
 INV_REG_MAP[20] = 32; // ADCL
@@ -82,7 +82,7 @@ INV_REG_MAP[13] = 39; // RMP1
 INV_REG_MAP[16] = 40; // POT0
 INV_REG_MAP[17] = 41; // POT1
 INV_REG_MAP[18] = 42; // POT2
-// LFO parameter registers: wire indices 0-7 map to SpinIDE 43-50
+// LFO parameter registers: wire indices 0-7 map to FV1Tool 43-50
 // Note: these overlap with REG0-REG7 (indices 32-39 via INV_REG_MAP[32..63]).
 // RAW words use wire format where 0-7 are LFO params, 32-63 are REGs.
 INV_REG_MAP[0] = 43;  // SIN0_RATE
@@ -95,9 +95,9 @@ INV_REG_MAP[6] = 49;  // RMP1_RATE
 INV_REG_MAP[7] = 50;  // RMP1_RANGE
 
 /**
- * Convert a SpinIDE compiled delay address to a delayPtr-relative offset.
+ * Convert a FV1Tool compiled delay address to a delayPtr-relative offset.
  *
- * SpinIDE stores delay addresses in two forms:
+ * FV1Tool stores delay addresses in two forms:
  *   address < MAX_DELAY_RAM  → treat as pointer-relative offset (hardware behavior)
  *   address >= MAX_DELAY_RAM → pointer-relative, offset = address - MAX_DELAY_RAM
  */
@@ -234,7 +234,7 @@ export class FV1Core {
   // ---------------------------------------------------------------------------
 
   private runPass(inL: number, inR: number, lr: number): void {
-    // PACC = previous sample's final ACC (SpinIDE convention)
+    // PACC = previous sample's final ACC (FV1Tool convention)
     const prevAcc = this.acc;
     this.acc = 0;
     this.pacc = prevAcc;
@@ -439,7 +439,7 @@ export class FV1Core {
       case 'skp_gez':
       case 'skp_neg':
       case 'skp_zrc': {
-        // SpinIDE flags: RUN=0x01, ZRO=0x02, GEZ=0x04, NEG=0x08, ZRC=0x10
+        // FV1Tool flags: RUN=0x01, ZRO=0x02, GEZ=0x04, NEG=0x08, ZRC=0x10
         const flags = o[0];
         const n = o[1];
         if (this.skpCondMet(flags)) return pc + 1 + n;
@@ -639,7 +639,7 @@ export class FV1Core {
   // ---------------------------------------------------------------------------
 
   private skpCondMet(flags: number): boolean {
-    // SpinIDE flag encoding: RUN=0x01, ZRO=0x02, GEZ=0x04, NEG=0x08, ZRC=0x10
+    // FV1Tool flag encoding: RUN=0x01, ZRO=0x02, GEZ=0x04, NEG=0x08, ZRC=0x10
     if ((flags & 0x08) && this.acc < 0)               return true; // NEG
     if ((flags & 0x04) && this.acc >= 0)              return true; // GEZ
     if ((flags & 0x02) && this.acc === 0)             return true; // ZRO
@@ -690,7 +690,7 @@ function decodeRawWord(word: number): CompiledInstruction | null {
     const v = raw & 0x7ff;
     return (v & 0x400) ? (v - 0x800) / 1024.0 : v / 1024.0;
   };
-  // Wire-format register → SpinIDE compiler index (so REG_MAP in exec() maps back correctly)
+  // Wire-format register → FV1Tool compiler index (so REG_MAP in exec() maps back correctly)
   const reg = (wireIdx: number) => INV_REG_MAP[wireIdx & 0x3f];
 
   switch (op) {
@@ -734,10 +734,10 @@ function decodeRawWord(word: number): CompiledInstruction | null {
         : { opcode: 'xor', operands: [mask],   line: -1 };
     }
     case 0x11: {
-      // SKP / JMP — decode raw hardware flag bits → SpinIDE internal flag encoding
+      // SKP / JMP — decode raw hardware flag bits → FV1Tool internal flag encoding
       const rawFlags = (word >>> 27) & 0x1f;
       // Hardware bits: [31]=RUN [30]=ZRC [29]=ZRO [28]=GEZ [27]=NEG
-      // SpinIDE bits:  RUN=0x01  ZRO=0x02  GEZ=0x04  NEG=0x08  ZRC=0x10
+      // FV1Tool bits:  RUN=0x01  ZRO=0x02  GEZ=0x04  NEG=0x08  ZRC=0x10
       let flags = 0;
       if (rawFlags & 0x10) flags |= 0x01; // bit 4 (31) = RUN
       if (rawFlags & 0x04) flags |= 0x02; // bit 2 (29) = ZRO
@@ -764,7 +764,7 @@ function decodeRawWord(word: number): CompiledInstruction | null {
       const lfoSel   = (word >>> 21) & 0x3;
       const rawFlags = (word >>> 24) & 0x3f;
       const arg      = (word >>> 5)  & 0xffff;
-      // CHO mode mapping: wire 0=RDA, 2=SOF, 3=RDAL → SpinIDE 0,1,2
+      // CHO mode mapping: wire 0=RDA, 2=SOF, 3=RDAL → FV1Tool 0,1,2
       const mode = modeBits === 0 ? 0 : modeBits === 2 ? 1 : modeBits === 3 ? 2 : -1;
       if (mode < 0) return null;
       return { opcode: 'cho', operands: [mode, lfoSel, rawFlags, arg], line: -1 };

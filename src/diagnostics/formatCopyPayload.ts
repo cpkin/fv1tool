@@ -16,7 +16,7 @@ export const formatCopyPayload = ({
   const sourceBlock = trimmedSource ? trimmedSource : '[No source provided]'
 
   return [
-    'SpinIDE Diagnostics',
+    'FV1Tool Diagnostics',
     '',
     'Source:',
     '```spinasm',
