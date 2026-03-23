@@ -19,6 +19,7 @@
     "@lezer/highlight": "^1.2.3",
     "@lezer/lr": "^1.4.7",
     "@types/cytoscape": "^3.21.9",
+    "@vercel/analytics": "^2.0.1",
     "codemirror": "^6.0.2",
     "cytoscape": "^3.33.1",
     "cytoscape-dagre": "^2.5.0",

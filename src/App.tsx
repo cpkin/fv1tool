@@ -19,6 +19,7 @@ import { useDebugStore } from './store/debugStore'
 import { mstratmanExamples, MSTRATMAN_REPO_URL } from './utils/mstratmanExamples'
 import { downloadText } from './utils/exportWAV'
 import SideDrawer from './ui/SideDrawer'
+import { Analytics } from '@vercel/analytics/react'
 
 function App() {
   const source = useValidationStore((state) => state.source)
@@ -361,6 +362,7 @@ function App() {
 
         <PlaybackControls />
       </div>
+      <Analytics />
     </>
   )
 }
