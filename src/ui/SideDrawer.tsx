@@ -75,6 +75,10 @@ export default function SideDrawer({ isOpen, onClose }: SideDrawerProps) {
                 <span className="roadmap-status roadmap-planned">Planned</span>
                 <span>UI improvements</span>
               </li>
+              <li className="roadmap-item">
+                <span className="roadmap-status roadmap-planned">Planned</span>
+                <span>Mobile support without degradation in audio quality</span>
+              </li>
             </ul>
           </section>
 
