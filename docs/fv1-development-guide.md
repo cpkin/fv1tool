@@ -594,9 +594,65 @@ These limits are enforced in hardware and must be respected:
 If your instruction count is less than 128, SpinASM pads the remainder with `nop` automatically. You do not need to manually add `nop` instructions to reach 128 unless you are using `ORG` to place code at specific positions.
 
 The 128-instruction limit is the primary constraint when writing complex effects. Techniques to save instructions:
-- Use `wrax REG, 1.0` (store and keep) instead of `wrax REG, 0` followed by `ldax REG` (saves 1 instruction)
 - Combine operations: `rdax REG, 1.0` adds to ACC without a separate load
 - Pre-compute constants with `EQU` rather than computing them at runtime
+
+#### WRAX/RDAX Optimization Patterns
+
+The most common source of wasted instructions is writing a value to a register and then immediately reading it back. These patterns are inspired by Digital Larry's [SpinCAD optimizer work](https://holy-city-audio.gitbook.io/spincad-designer). **Never generate these wasteful patterns — use the optimized form from the start.**
+
+**Case 1: Store then reload, register unused afterward — remove both**
+
+If `WRAX reg, 0` is followed by `RDAX reg, 1.0` and `reg` is never used again, both instructions are pointless — the value is already in ACC.
+
+```asm
+; WASTEFUL (2 extra instructions, 1 wasted register):
+rdfx REG6, 0.07
+wrax REG6, 0.0          ; store to REG6, clear ACC
+rdax REG6, 1.0          ; reload REG6 into ACC (why?)
+sof  0.27, 0.73
+
+; OPTIMIZED (ACC already has the value — skip the round-trip):
+rdfx REG6, 0.07
+sof  0.27, 0.73
+; Saves: 2 instructions + 1 register
+```
+
+**Case 2: Store then reload, register IS used later — store and keep**
+
+If `WRAX reg, 0` is followed by `RDAX reg, 1.0` but `reg` is referenced elsewhere, change the WRAX gain to 1.0 to keep the value in ACC and remove the RDAX.
+
+```asm
+; WASTEFUL (1 extra instruction):
+rdfx REG6, 0.07
+wrax REG6, 0.0          ; store to REG6, clear ACC
+rdax REG6, 1.0          ; reload REG6 (needed later, but wasteful reload)
+sof  0.27, 0.73
+wrax REG6, 0.0          ; REG6 used again here
+
+; OPTIMIZED (store AND keep in ACC):
+rdfx REG6, 0.07
+wrax REG6, 1.0          ; store to REG6, KEEP value in ACC
+sof  0.27, 0.73
+wrax REG6, 0.0
+; Saves: 1 instruction
+```
+
+**Case 3: Store then reload with scaling — use SOF instead**
+
+If `WRAX reg, 0` is followed by `RDAX reg, coeff` where `coeff` is not 1.0, and `reg` is unused afterward, replace both with `SOF coeff, 0.0` to scale ACC directly.
+
+```asm
+; WASTEFUL (1 extra instruction, 1 wasted register):
+wrax REG5, 0.0          ; store to REG5, clear ACC
+rdax REG5, -1.2         ; reload REG5 scaled by -1.2
+
+; OPTIMIZED (scale ACC directly):
+sof  -1.2, 0.0          ; ACC = ACC * -1.2 (no register needed)
+; Saves: 1 instruction + 1 register
+```
+
+These patterns compound quickly. A complex effect with 10 register round-trips wastes 10–20 instructions — often the difference between fitting in 128 slots or not.
 
 ---
 
