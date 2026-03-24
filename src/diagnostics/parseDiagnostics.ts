@@ -53,6 +53,11 @@ export const parseDiagnostics = (
       return true
     }
 
+    // label: instruction [operands] (e.g. "label_note4: RDA Extra4#,0.5")
+    if (/^[A-Za-z_][A-Za-z0-9_]*:\s+[A-Za-z_][A-Za-z0-9_]*\b(\s+[A-Za-z0-9_#^|.+\-*/\s,$%]+)?$/.test(trimmed)) {
+      return true
+    }
+
     return false
   }
 

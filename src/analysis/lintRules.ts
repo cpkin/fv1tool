@@ -117,6 +117,11 @@ const collectMemoryUsage = (parseResult: ParseResult) => {
         reads.add(normalized)
       }
     }
+
+    // RMPA reads delay memory indirectly via ADDR_PTR — any MEM could be the target
+    if (opcode === 'rmpa') {
+      memoryNames.forEach((name) => reads.add(name))
+    }
   })
 
   return { writes, reads }
@@ -339,7 +344,7 @@ export const runLintRules = (
           message: `LINT-03: ${symbol.name} is written but never read.`,
           line: symbol.line,
           column: symbol.column,
-          suggestedFix: 'Read from this delay line using RDA or CHO, or remove it.',
+          suggestedFix: 'Read from this delay line using RDA, CHO, or RMPA, or remove it.',
           source,
         })
       )
