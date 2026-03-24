@@ -797,7 +797,7 @@ wrax DACR, 0.0         ; right output
 
 #### Reverb Design Decisions
 
-The character of a reverb is determined by a few key architectural choices. Understanding these lets you create different reverb flavors from the same basic ring topology.
+The following insights are drawn from analysis of the Spin Semi reverb programs, informed by Digital Larry's work at [Holy City Audio](https://holy-city-audio.gitbook.io/spincad-designer). The character of a reverb is determined by a few key architectural choices. Understanding these lets you create different reverb flavors from the same basic ring topology.
 
 **1. Delay table sizing = reverb character.** The Spin Semi plate reverbs (rev_pl_1/2/3) are the *same algorithm* with different MEM sizes. This is the simplest way to create reverb variants:
 
