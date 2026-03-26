@@ -276,6 +276,19 @@ Sets the instruction counter origin for subsequent instructions. Rarely needed.
 
 Flags can be combined with `|` (bitwise OR). Example: `skp GEZ|ZRC,label`
 
+**Critical: combined flags use AND logic, not OR.** When multiple flags are combined, the skip fires only if **ALL** flagged conditions are true simultaneously. This is unintuitive and commonly misunderstood.
+
+Examples with combined flags:
+- `skp NEG|ZRO, label` — skip if ACC is negative AND zero (impossible — **never skips**)
+- `skp ZRO|GEZ, label` — skip only on **exact zero** (zero satisfies both GEZ and ZRO)
+- `skp NEG|GEZ, label` — skip if negative AND non-negative (impossible — **never skips**)
+- `skp 0, label` — all flags clear = **unconditional skip** (equivalent to JMP)
+- `skp GEZ|ZRC, label` — skip if ACC >= 0 AND a zero crossing occurred
+
+If you want "skip if negative OR zero" behavior, you need two separate SKP instructions — one for each condition. Combined flags are for narrowing conditions, not broadening them.
+
+Based on hardware testing by Nathan Fraser ([fv1testing](https://github.com/ndf-zz/fv1testing)).
+
 ### 5.3 Full Instruction Listing
 
 #### Delay Memory
